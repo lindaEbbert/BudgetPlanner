@@ -31,6 +31,12 @@ def create_user():
             return jsonify(user.to_dict()), 200
         return jsonify({"message": "User not found"}), 404
 
+@app.route('/fixed_costs')
+def get_all_fixed_costs():
+    fixed_costs = FixedCosts.query.all()
+    return jsonify([fixed_cost.to_dict() for fixed_cost in fixed_costs]), 200
+
+
 @app.route('/users')
 def get_all_users():
     users = User.query.all()

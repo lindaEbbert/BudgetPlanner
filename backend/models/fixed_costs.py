@@ -11,3 +11,10 @@ class FixedCosts(db.Model):
 
     #user = db.relationship('User', backref='fixed_costs')  #, secondary='fixed_costs_users')
 
+    def to_dict(self):
+        return {"id": self.id,
+                "name": self.name,
+                "description": self.description,
+                "money_amount": self.money_amount,
+                "unit": self.unit,
+                "unit_amount": self.unit_amount}
