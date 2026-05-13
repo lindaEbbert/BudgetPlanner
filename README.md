@@ -12,7 +12,7 @@ BudgetPlanner is a tool designed to help users track their fixed costs and manag
 - **Framework:** [Flask](https://flask.palletsprojects.com/)
 - **ORM:** [Flask-SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/)
 - **Database:** SQLite (Default), configuration for PostgreSQL available.
-- **Package Manager:** pip (TODO: Add `requirements.txt`)
+- **Package Manager:** pip (`requirements.txt` included)
 
 ## Project Structure
 
@@ -25,7 +25,8 @@ BudgetPlanner/
 │   │   ├── user.py          # User model
 │   │   ├── fixed_costs.py   # Fixed costs model
 │   │   └── ...
-│   └── docs/                # Project documentation & ToDos
+│   ├── docs/                # Project documentation & ToDos
+│   └── requirements.txt     # Python dependencies
 └── README.md
 ```
 
@@ -53,9 +54,7 @@ BudgetPlanner/
 
 3. Install dependencies:
    ```bash
-   # TODO: Create requirements.txt and use:
-   # pip install -r requirements.txt
-   pip install flask flask-sqlalchemy
+   pip install -r backend/requirements.txt
    ```
 
 ### Running the Application
