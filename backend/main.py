@@ -1,8 +1,21 @@
 from flask import Flask, request, jsonify
 from db import db, add_user
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv()
+
+
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'  # postgresql link
+app.config['SQLALCHEMY_DATABASE_URI'] = (f"postgresql://{DB_USER}:{DB_PASSWORD}"
+                                         f"@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 db.init_app(app)
 
 
