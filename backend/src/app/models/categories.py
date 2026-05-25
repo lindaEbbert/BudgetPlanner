@@ -1,6 +1,6 @@
 import enum
 
-from db import db
+from src.app.db import db
 
 class CategoryType(enum.Enum):
     INCOME = 'income'
