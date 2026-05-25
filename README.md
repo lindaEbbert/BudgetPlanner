@@ -1,65 +1,94 @@
 # BudgetPlanner
 
-A simple personal budget planning application with a Flask backend.
+A full-stack personal budget planning application with Flask backend and TypeScript frontend.
 
 ## Overview
 
-BudgetPlanner is a tool designed to help users track their fixed costs and manage their budget. Currently, it features a backend API for user management and cost tracking.
+BudgetPlanner is a tool designed to help users track their finances, manage budgets, categorize transactions, and monitor fixed costs. The application provides a REST API for data management and user operations.
 
-## Stack
+## Tech Stack
 
-- **Language:** Python 3.x
-- **Framework:** [Flask](https://flask.palletsprojects.com/)
-- **ORM:** [Flask-SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/)
-- **Database:** PostgreSQL (configured via `.env`)
-- **Package Manager:** pip (`requirements.txt` included)
+### Backend
+- **Language:** Python 3.13
+- **Framework:** Flask 3.1.3
+- **ORM:** SQLAlchemy 2.0.49
+- **Database:** PostgreSQL
+- **Migrations:** Alembic 1.18.4
+- **Environment:** python-dotenv
+
+### Frontend
+- **Language:** TypeScript 5.5.3
+- **Build Tool:** TypeScript Compiler (tsc)
 
 ## Project Structure
 
 ```text
 BudgetPlanner/
 ├── backend/
-│   ├── main.py              # Application entry point & routes
-│   ├── db.py                # Database configuration & helpers
-│   ├── .env                 # Environment variables (not in Git!)
-│   ├── models/              # SQLAlchemy models
-│   │   ├── user.py          # User model
-│   │   ├── fixed_costs.py   # Fixed costs model
-│   │   ├── has_user_fixed_costs.py # Link between User & Fixed costs
-│   │   └── ...
-│   ├── docs/                # Project documentation & ToDos
-│   └── requirements.txt     # Python dependencies
+│   ├── src/app/
+│   │   ├── controller/           # API route handlers
+│   │   │   └── user_controller.py
+│   │   ├── models/               # SQLAlchemy models
+│   │   │   ├── user.py
+│   │   │   ├── fixed_costs.py
+│   │   │   ├── budgets.py
+│   │   │   ├── categories.py
+│   │   │   ├── transactions.py
+│   │   │   └── has_user_fixed_costs.py
+│   │   ├── services/             # Business logic layer
+│   │   │   └── user_service.py
+│   │   ├── db.py                # Database initialization
+│   │   └── main.py              # Application entry point
+│   ├── alembic/                 # Database migrations
+│   ├── .env                     # Environment variables (not in Git!)
+│   ├── alembic.ini              # Alembic configuration
+│   └── requirements.txt         # Python dependencies
+├── frontend/
+│   ├── src/                     # TypeScript source files
+│   ├── package.json             # Node.js dependencies
+│   └── tsconfig.json            # TypeScript configuration
 └── README.md
 ```
+
+## Database Models
+
+- **User**: User account management
+- **FixedCosts**: Recurring fixed expenses
+- **Budgets**: Budget planning and tracking
+- **Categories**: Transaction categorization
+- **Transactions**: Financial transactions
+- **HasUserFixedCosts**: Junction table linking users to their fixed costs
 
 ## Setup & Start
 
 ### Prerequisites
 
-- Python 3.x
+- Python 3.13+
 - PostgreSQL Database
+- Node.js & npm (for frontend)
 
-### Installation
+### Backend Setup
 
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd BudgetPlanner
+   cd BudgetPlanner/backend
    ```
 
-2. (Recommended) Create a virtual environment:
+2. Create a virtual environment:
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python -m venv .venv
+   .venv\Scripts\activate  # Windows
+   source .venv/bin/activate  # macOS/Linux
    ```
 
 3. Install dependencies:
    ```bash
-   pip install -r backend/requirements.txt
+   pip install -r requirements.txt
    ```
 
-4. Configuration of environment variables:
-   Create a `.env` file in the `backend/` directory with the following content (example):
+4. Configure environment variables:
+   Create a `.env` file in the `backend/` directory:
    ```env
    DB_USER=your_user
    DB_PASSWORD=your_password
@@ -68,24 +97,53 @@ BudgetPlanner/
    DB_NAME=budget_planner_db
    ```
 
-### Running the Application
+5. Run database migrations:
+   ```bash
+   alembic upgrade head
+   ```
 
-Start the Flask server:
-
-```bash
-cd backend
-python main.py
-```
+6. Start the Flask server:
+   ```bash
+   python src/app/main.py
+   ```
 
 The server starts on `http://127.0.0.1:5000/` by default.
 
+### Frontend Setup
+
+1. Navigate to frontend directory:
+   ```bash
+   cd frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Build the TypeScript files:
+   ```bash
+   npm run build
+   ```
+
 ## API Endpoints
 
-- `GET /`: Returns a simple "Hello World!" message.
-- `POST /user`: Create a new user (JSON body: `name`, `email`, `hashed_password`).
-- `GET /user?id=<id>`: Retrieve user details by ID.
-- `GET /users`: Retrieve a list of all registered users.
-- `GET /fixed_costs`: Retrieve a list of all available fixed costs.
+### General
+- `GET /` - Health check endpoint
+
+### Users
+- `POST /users` - Create a new user
+- `GET /users/<id>` - Get user by ID
+- `GET /users` - Get all users
+
+### Fixed Costs
+- `GET /fixed_costs` - Get all fixed costs
+
+## Database Migrations
+
+- **Create migration**: `alembic revision --autogenerate -m "description"`
+- **Apply migrations**: `alembic upgrade head`
+- **Rollback**: `alembic downgrade -1`
 
 ## Environment Variables
 
@@ -97,10 +155,11 @@ The following variables must be defined in the `backend/.env` file:
 - `DB_PORT`: Database port (Default: 5432)
 - `DB_NAME`: Name of the database
 
-## Tests
+## Development
 
-- TODO: Add unit and integration tests.
+See individual README files for more details:
+- [Backend Documentation](backend/README.md)
 
 ## License
 
-- TODO: Add a LICENSE file.
+TODO: Add a LICENSE file.
