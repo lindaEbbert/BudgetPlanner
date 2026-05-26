@@ -290,3 +290,5 @@ fabric.properties
 .idea/misc.xml
 
 /**/.idea/*
+
+backend/seed_data.py

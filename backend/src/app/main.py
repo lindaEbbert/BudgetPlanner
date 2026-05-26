@@ -48,7 +48,5 @@ def get_all_fixed_costs():
 
 
 
-
-
 if __name__ == '__main__':
     app.run(debug=True)
