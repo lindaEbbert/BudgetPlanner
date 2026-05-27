@@ -1,0 +1,86 @@
+### Login
+POST http://localhost:5000/auth/login
+Content-Type: application/json
+
+{
+  "email": "linda_test2@hatschi.de",
+  "password": "alkvzb578h"
+}
+
+> {%
+  client.global.set("token", response.body.access_token);
+%}
+
+### GET Categories
+GET http://localhost:5000/categories
+Authorization: Bearer {{token}}
+
+### POST Category - Einnahme
+POST http://localhost:5000/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Tanzstunden",
+  "type": "INCOME"
+}
+
+> {%
+  client.global.set("categoryId", response.body.id);
+%}
+
+### POST Category - Ausgabe
+POST http://localhost:5000/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Miete",
+  "type": "EXPENSE"
+}
+
+### PUT Category - umbenennen
+PUT http://localhost:5000/categories/{{categoryId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Tanzstunden aktualisiert",
+  "type": "INCOME"
+}
+
+### DELETE Category
+DELETE http://localhost:5000/categories/{{categoryId}}
+Authorization: Bearer {{token}}
+
+### GET Balance
+GET http://localhost:5000/transactions/balance
+Authorization: Bearer {{token}}
+
+### POST Transaction
+POST http://localhost:5000/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Januargehalt",
+  "amount": 2500.00,
+  "type": "INCOME",
+  "categoryId": "{{categoryId}}",
+  "transactionDate": "2026-05-01"
+}
+
+> {%
+  client.global.set("transactionId", response.body.id);
+%}
+
+### VOID Transaction
+POST http://localhost:5000/transactions/{{transactionId}}/void
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{}
+
+### GET Dashboard
+GET http://localhost:5000/dashboard
+Authorization: Bearer {{token}}
