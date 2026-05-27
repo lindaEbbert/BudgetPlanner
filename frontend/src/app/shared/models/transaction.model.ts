@@ -3,8 +3,8 @@ export type TransactionType = 'INCOME' | 'EXPENSE' | 'INITIAL';
 export interface Transaction {
   id: string;
   userId: string;
-  categoryId: string;
-  fixedCostId: string;
+  categoryId?: string;
+  fixedCostId?: string;
   name: string;
   amount: number;
   type: TransactionType;
@@ -18,7 +18,7 @@ export interface CreateTransactionDto {
   name: string;
   amount: number;
   type: TransactionType;
-  categoryId: string;
+  categoryId?: string;
   transactionDate: string;
   description?: string;
 }
@@ -26,5 +26,6 @@ export interface CreateTransactionDto {
 export interface BalanceSummary {
   income: number;
   expense: number;
+  initialBalance: number;
   balance: number;
 }
