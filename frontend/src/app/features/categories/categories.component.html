@@ -1,1 +1,42 @@
-<p>categories works!</p>
+<div class="page-header">
+  <h1>Kategorien</h1>
+  <button mat-raised-button color="primary" (click)="openCreateDialog()">
+    <mat-icon>add</mat-icon> Neue Kategorie
+  </button>
+</div>
+
+<mat-table [dataSource]="dataSource" class="mat-elevation-z2">
+
+  <ng-container matColumnDef="name">
+    <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
+    <mat-cell *matCellDef="let cat">{{ cat.name }}</mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="type">
+    <mat-header-cell *matHeaderCellDef>Typ</mat-header-cell>
+    <mat-cell *matCellDef="let cat">
+      <span [class]="'type-badge ' + cat.type.toLowerCase()">
+        {{ cat.type === 'INCOME' ? 'Einnahme' : 'Ausgabe' }}
+      </span>
+    </mat-cell>
+  </ng-container>
+
+  <ng-container matColumnDef="actions">
+    <mat-header-cell *matHeaderCellDef></mat-header-cell>
+    <mat-cell *matCellDef="let cat">
+      <button mat-icon-button (click)="openEditDialog(cat)">
+        <mat-icon>edit</mat-icon>
+      </button>
+      <button mat-icon-button color="warn" (click)="deleteCategory(cat.id)">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </mat-cell>
+  </ng-container>
+
+  <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+  <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+</mat-table>
+
+@if (dataSource.data.length === 0) {
+  <p class="empty-state">Noch keine Kategorien. Erstelle deine erste Kategorie!</p>
+}

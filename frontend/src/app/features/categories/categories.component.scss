@@ -1,0 +1,23 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  h1 { margin: 0; }
+}
+
+.type-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+
+  &.income { background: #e8f5e9; color: #2e7d32; }
+  &.expense { background: #ffebee; color: #c62828; }
+}
+
+.empty-state {
+  text-align: center;
+  color: #999;
+  margin-top: 48px;
+}
