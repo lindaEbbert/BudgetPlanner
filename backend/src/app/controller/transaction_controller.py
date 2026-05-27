@@ -9,7 +9,7 @@ def transaction_to_dict(t):
     return {
         'id': str(t.id),
         'userId': str(t.user_id),
-        'categoryId': str(t.category_id),
+        'categoryId': str(t.category_id) if t.category_id else None,
         'fixedCostId': str(t.fixed_cost_id) if t.fixed_cost_id else None,
         'name': t.name,
         'amount': float(t.amount),
@@ -44,7 +44,10 @@ def create_transaction():
     user_id = get_jwt_identity()
     data = request.get_json()
 
-    required = ['name', 'amount', 'type', 'categoryId', 'transactionDate']
+    transaction_type = data.get('type')
+    required = ['name', 'amount', 'type', 'transactionDate']
+    if transaction_type != 'INITIAL':
+        required.append('categoryId')
     for field in required:
         if not data.get(field):
             return jsonify({'error': f'{field} ist erforderlich'}), 400
@@ -54,7 +57,7 @@ def create_transaction():
         name=data['name'],
         amount=data['amount'],
         transaction_type=data['type'],
-        category_id=data['categoryId'],
+        category_id=data.get('categoryId'),
         transaction_date=data['transactionDate'],
         description=data.get('description'),
         fixed_cost_id=data.get('fixedCostId')

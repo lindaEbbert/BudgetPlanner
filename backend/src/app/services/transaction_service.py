@@ -74,7 +74,7 @@ def calculate_balance(user_id):
     initial_balance = transaction_repository.get_initial_balance_sum(user_id)
     return {
         'income': float(income),
-        'expenses': float(expenses),
+        'expense': float(expenses),
         'initialBalance': float(initial_balance),
         'balance': float(initial_balance + income - expenses)
     }
