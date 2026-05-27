@@ -11,6 +11,10 @@ Content-Type: application/json
   client.global.set("token", response.body.access_token);
 %}
 
+### ─────────────────────────────────────
+### CATEGORIES
+### ─────────────────────────────────────
+
 ### GET Categories
 GET http://localhost:5000/categories
 Authorization: Bearer {{token}}
@@ -26,7 +30,7 @@ Authorization: Bearer {{token}}
 }
 
 > {%
-  client.global.set("categoryId", response.body.id);
+  client.global.set("categoryIncomeId", response.body.id);
 %}
 
 ### POST Category - Ausgabe
@@ -35,12 +39,16 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "name": "Miete",
+  "name": "Strom",
   "type": "EXPENSE"
 }
 
+> {%
+  client.global.set("categoryExpenseId", response.body.id);
+%}
+
 ### PUT Category - umbenennen
-PUT http://localhost:5000/categories/{{categoryId}}
+PUT http://localhost:5000/categories/{{categoryIncomeId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -50,14 +58,40 @@ Authorization: Bearer {{token}}
 }
 
 ### DELETE Category
-DELETE http://localhost:5000/categories/{{categoryId}}
+DELETE http://localhost:5000/categories/{{categoryIncomeId}}
 Authorization: Bearer {{token}}
 
-### GET Balance
+### ─────────────────────────────────────
+### TRANSACTIONS
+### ─────────────────────────────────────
+
+### GET Balance (leer)
 GET http://localhost:5000/transactions/balance
 Authorization: Bearer {{token}}
 
-### POST Transaction
+### GET Transactions (leer)
+GET http://localhost:5000/transactions
+Authorization: Bearer {{token}}
+
+### POST Transaction - Anfangssaldo (INITIAL)
+POST http://localhost:5000/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Anfangssaldo",
+  "amount": 1000.00,
+  "type": "INITIAL",
+  "categoryId": "{{categoryIncomeId}}",
+  "transactionDate": "2026-01-01",
+  "description": "Startsaldo Konto"
+}
+
+> {%
+  client.global.set("initialTransactionId", response.body.id);
+%}
+
+### POST Transaction - Einnahme
 POST http://localhost:5000/transactions
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -66,7 +100,7 @@ Authorization: Bearer {{token}}
   "name": "Januargehalt",
   "amount": 2500.00,
   "type": "INCOME",
-  "categoryId": "{{categoryId}}",
+  "categoryId": "{{categoryIncomeId}}",
   "transactionDate": "2026-05-01"
 }
 
@@ -74,12 +108,65 @@ Authorization: Bearer {{token}}
   client.global.set("transactionId", response.body.id);
 %}
 
-### VOID Transaction
+### POST Transaction - Ausgabe
+POST http://localhost:5000/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Januarstrom",
+  "amount": 800.00,
+  "type": "EXPENSE",
+  "categoryId": "{{categoryExpenseId}}",
+  "transactionDate": "2026-05-01",
+  "description": "Strom Mai"
+}
+
+### GET Balance (sollte initial:1000 + income:2500 - expense:800 = 2700 sein)
+GET http://localhost:5000/transactions/balance
+Authorization: Bearer {{token}}
+
+### GET Transactions (alle drei sichtbar)
+GET http://localhost:5000/transactions
+Authorization: Bearer {{token}}
+
+### PUT Transaction - Betrag ändern
+PUT http://localhost:5000/transactions/{{transactionId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Januargehalt korrigiert",
+  "amount": 2600.00,
+  "transactionDate": "2026-05-01"
+}
+
+### GET Balance nach Update (sollte 2800 sein)
+GET http://localhost:5000/transactions/balance
+Authorization: Bearer {{token}}
+
+### VOID Transaction - Einnahme stornieren
 POST http://localhost:5000/transactions/{{transactionId}}/void
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {}
+
+### GET Balance nach Void (sollte wieder 200 sein: initial:1000 - expense:800)
+GET http://localhost:5000/transactions/balance
+Authorization: Bearer {{token}}
+
+### GET Transactions (ohne stornierte — stornierte Einnahme unsichtbar)
+GET http://localhost:5000/transactions
+Authorization: Bearer {{token}}
+
+### GET Transactions mit stornierten (alle sichtbar)
+GET http://localhost:5000/transactions?include_voided=true
+Authorization: Bearer {{token}}
+
+### ─────────────────────────────────────
+### DASHBOARD
+### ─────────────────────────────────────
 
 ### GET Dashboard
 GET http://localhost:5000/dashboard
