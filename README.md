@@ -1,165 +1,94 @@
 # BudgetPlanner
 
-A full-stack personal budget planning application with Flask backend and TypeScript frontend.
-
-## Overview
-
-BudgetPlanner is a tool designed to help users track their finances, manage budgets, categorize transactions, and monitor fixed costs. The application provides a REST API for data management and user operations.
+A full-stack personal finance application for tracking income, expenses, budgets, and fixed costs.
 
 ## Tech Stack
 
-### Backend
-- **Language:** Python 3.13
-- **Framework:** Flask 3.1.3
-- **ORM:** SQLAlchemy 2.0.49
-- **Database:** PostgreSQL
-- **Migrations:** Alembic 1.18.4
-- **Environment:** python-dotenv
-
-### Frontend
-- **Language:** TypeScript 5.5.3
-- **Build Tool:** TypeScript Compiler (tsc)
+| Layer | Technology |
+|---|---|
+| Frontend | Angular 20, TypeScript 5.8, SCSS |
+| Backend | Python 3.13, Flask 3.1 |
+| ORM | SQLAlchemy 2.0 + Flask-SQLAlchemy |
+| Database | PostgreSQL |
+| Migrations | Alembic |
+| Auth | Flask-JWT-Extended + Flask-Bcrypt |
 
 ## Project Structure
 
-```text
+```
 BudgetPlanner/
-├── backend/
+├── backend/                  # Flask REST API
 │   ├── src/app/
-│   │   ├── controller/           # API route handlers
-│   │   │   └── user_controller.py
-│   │   ├── models/               # SQLAlchemy models
-│   │   │   ├── user.py
-│   │   │   ├── fixed_costs.py
-│   │   │   ├── budgets.py
-│   │   │   ├── categories.py
-│   │   │   ├── transactions.py
-│   │   │   └── has_user_fixed_costs.py
-│   │   ├── services/             # Business logic layer
-│   │   │   └── user_service.py
-│   │   ├── db.py                # Database initialization
-│   │   └── main.py              # Application entry point
-│   ├── alembic/                 # Database migrations
-│   ├── .env                     # Environment variables (not in Git!)
-│   ├── alembic.ini              # Alembic configuration
-│   └── requirements.txt         # Python dependencies
-├── frontend/
-│   ├── src/                     # TypeScript source files
-│   ├── package.json             # Node.js dependencies
-│   └── tsconfig.json            # TypeScript configuration
-└── README.md
+│   │   ├── controller/       # Route handlers (Blueprints)
+│   │   ├── services/         # Business logic
+│   │   ├── repositories/     # Data access layer
+│   │   ├── models/           # SQLAlchemy models
+│   │   └── main.py           # App entry point
+│   ├── alembic/              # Database migrations
+│   └── requirements.txt
+├── frontend/                 # Angular SPA
+│   ├── src/app/
+│   │   ├── core/             # Guards, interceptors, services, layout
+│   │   ├── features/         # Feature modules (dashboard, categories, ...)
+│   │   └── shared/           # Shared models
+│   └── package.json
+└── docs/                     # Planning documents
 ```
 
-## Database Models
+## Quick Start
 
-- **User**: User account management
-- **FixedCosts**: Recurring fixed expenses
-- **Budgets**: Budget planning and tracking
-- **Categories**: Transaction categorization
-- **Transactions**: Financial transactions
-- **HasUserFixedCosts**: Junction table linking users to their fixed costs
+### Backend
 
-## Setup & Start
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+source .venv/bin/activate     # macOS/Linux
+pip install -r requirements.txt
+```
 
-### Prerequisites
+Create a `.env` file in `backend/`:
 
-- Python 3.13+
-- PostgreSQL Database
-- Node.js & npm (for frontend)
+```env
+DB_USER=your_user
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=budget_planner_db
+JWT_SECRET_KEY=your_secret_key
+```
 
-### Backend Setup
+```bash
+alembic upgrade head
+python src/app/main.py
+```
 
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd BudgetPlanner/backend
-   ```
+The API runs at `http://localhost:5000`.
 
-2. Create a virtual environment:
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate  # Windows
-   source .venv/bin/activate  # macOS/Linux
-   ```
+### Frontend
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+cd frontend
+npm install
+ng serve
+```
 
-4. Configure environment variables:
-   Create a `.env` file in the `backend/` directory:
-   ```env
-   DB_USER=your_user
-   DB_PASSWORD=your_password
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=budget_planner_db
-   ```
+The app runs at `http://localhost:4200`.
 
-5. Run database migrations:
-   ```bash
-   alembic upgrade head
-   ```
+## API Overview
 
-6. Start the Flask server:
-   ```bash
-   python src/app/main.py
-   ```
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/auth/register` | — | Register new user |
+| POST | `/auth/login` | — | Login, returns JWT |
+| GET | `/categories` | JWT | Get all categories |
+| POST | `/categories` | JWT | Create category |
+| PUT | `/categories/<id>` | JWT | Update category |
+| DELETE | `/categories/<id>` | JWT | Soft-delete category |
 
-The server starts on `http://127.0.0.1:5000/` by default.
+> See [Backend README](backend/README.md) for the full endpoint reference.
 
-### Frontend Setup
+## More Information
 
-1. Navigate to frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Build the TypeScript files:
-   ```bash
-   npm run build
-   ```
-
-## API Endpoints
-
-### General
-- `GET /` - Health check endpoint
-
-### Users
-- `POST /users` - Create a new user
-- `GET /users/<id>` - Get user by ID
-- `GET /users` - Get all users
-
-### Fixed Costs
-- `GET /fixed_costs` - Get all fixed costs
-
-## Database Migrations
-
-- **Create migration**: `alembic revision --autogenerate -m "description"`
-- **Apply migrations**: `alembic upgrade head`
-- **Rollback**: `alembic downgrade -1`
-
-## Environment Variables
-
-The following variables must be defined in the `backend/.env` file:
-
-- `DB_USER`: PostgreSQL username
-- `DB_PASSWORD`: PostgreSQL password
-- `DB_HOST`: Database host (e.g., localhost)
-- `DB_PORT`: Database port (Default: 5432)
-- `DB_NAME`: Name of the database
-
-## Development
-
-See individual README files for more details:
-- [Backend Documentation](backend/README.md)
-
-## License
-
-TODO: Add a LICENSE file.
+- [Backend Documentation](backend/README.md) — architecture, all endpoints, migrations
+- [Frontend Documentation](frontend/README.md) — routing, auth flow, development commands

@@ -1,98 +1,157 @@
-# Budget Planner - Backend
+# BudgetPlanner — Backend
 
-A Flask-based REST API for managing personal budgets, transactions, and fixed costs.
+Flask REST API with JWT authentication, a 3-layer architecture, and PostgreSQL.
 
 ## Tech Stack
 
-- **Framework**: Flask 3.1.3
+- **Python** 3.13
+- **Flask** 3.1 + Flask-SQLAlchemy + Flask-JWT-Extended + Flask-Bcrypt + Flask-CORS
 - **Database**: PostgreSQL
-- **ORM**: SQLAlchemy 2.0.49
-- **Migrations**: Alembic 1.18.4
-- **Environment**: Python 3.13
+- **ORM**: SQLAlchemy 2.0
+- **Migrations**: Alembic
 
-## Project Structure
+## Architecture
+
+The backend follows a strict 3-layer pattern:
+
+```
+Request → Controller → Service → Repository → Database
+```
+
+| Layer | Folder | Responsibility |
+|---|---|---|
+| Controller | `controller/` | HTTP routing, request parsing, response formatting |
+| Service | `services/` | Business logic, validation, error handling |
+| Repository | `repositories/` | Database queries, data access |
+| Model | `models/` | SQLAlchemy table definitions |
+
+### Project Structure
 
 ```
 backend/
 ├── src/app/
-│   ├── controller/         # API route handlers
-│   │   └── user_controller.py
-│   ├── models/            # Database models
+│   ├── controller/
+│   │   ├── auth_controller.py       # /auth routes
+│   │   ├── category_controller.py   # /categories routes
+│   │   └── user_controller.py       # /user routes
+│   ├── services/
+│   │   ├── auth_service.py
+│   │   ├── category_service.py
+│   │   └── user_service.py
+│   ├── repositories/
+│   │   ├── base_repository.py       # Generic CRUD base class
+│   │   ├── category_repository.py
+│   │   └── user_repository.py
+│   ├── models/
 │   │   ├── user.py
-│   │   ├── fixed_costs.py
-│   │   ├── budgets.py
 │   │   ├── categories.py
 │   │   ├── transactions.py
-│   │   └── has_user_fixed_costs.py
-│   ├── services/          # Business logic layer
-│   │   └── user_service.py
-│   ├── db.py             # Database initialization
-│   └── main.py           # Application entry point
-├── alembic/              # Database migrations
-├── .env                  # Environment variables
-├── alembic.ini          # Alembic configuration
-└── requirements.txt     # Python dependencies
+│   │   ├── budgets.py
+│   │   └── fixed_costs.py
+│   ├── db.py                        # SQLAlchemy instance
+│   └── main.py                      # App factory & blueprint registration
+├── alembic/                         # Migration files
+├── alembic.ini
+├── requirements.txt
+└── test.http                        # Manual API test file
 ```
 
 ## Database Models
 
-- **User**: User account management
-- **FixedCosts**: Recurring fixed expenses
-- **Budgets**: Budget planning and tracking
-- **Categories**: Transaction categorization
-- **Transactions**: Financial transactions
+| Model | Table | Description |
+|---|---|---|
+| `User` | `user` | User accounts (email unique, password hashed) |
+| `Categories` | `categories` | Income/Expense categories per user, supports soft-delete |
+| `Transactions` | `transactions` | Financial transactions linked to a category |
+| `Budgets` | `budgets` | Monthly budget limits per user and category |
+| `FixedCosts` | `fixed_costs` | Recurring costs with interval and start date |
+
+## API Endpoints
+
+### Auth — `/auth`
+
+| Method | Path | Body | Description |
+|---|---|---|---|
+| POST | `/auth/register` | `email`, `name`, `password` | Register a new user |
+| POST | `/auth/login` | `email`, `password` | Login — returns `access_token` |
+
+### Categories — `/categories` *(JWT required)*
+
+| Method | Path | Body | Description |
+|---|---|---|---|
+| GET | `/categories` | — | Get all categories for the authenticated user |
+| POST | `/categories` | `name`, `type` | Create a category (`type`: `INCOME` or `EXPENSE`) |
+| PUT | `/categories/<id>` | `name`, `type` | Update a category |
+| DELETE | `/categories/<id>` | — | Soft-delete a category |
+
+### Users — `/user`
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/user` | Create a user |
+| GET | `/user` | Get a user |
+| GET | `/users` | Get all users |
+| PUT | `/user/<id>` | Update a user |
+| DELETE | `/user/<id>` | Delete a user |
+
+### Other
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/` | Health check |
+| GET | `/fixed_costs` | Get all fixed costs |
 
 ## Setup
 
-1. **Create virtual environment**:
+1. **Create and activate virtual environment**
    ```bash
    python -m venv .venv
-   .venv\Scripts\activate  # Windows
+   .venv\Scripts\activate     # Windows
+   source .venv/bin/activate  # macOS/Linux
    ```
 
-2. **Install dependencies**:
+2. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Configure environment variables**:
-   Create a `.env` file with:
-   ```
-   DB_USER=your_db_user
-   DB_PASSWORD=your_db_password
+3. **Create `.env` file** in the `backend/` directory
+   ```env
+   DB_USER=your_user
+   DB_PASSWORD=your_password
    DB_HOST=localhost
    DB_PORT=5432
-   DB_NAME=budget_planner
+   DB_NAME=budget_planner_db
+   JWT_SECRET_KEY=your_secret_key
    ```
 
-4. **Run migrations**:
+4. **Run migrations**
    ```bash
    alembic upgrade head
    ```
 
-5. **Start the server**:
+5. **Start the server**
    ```bash
    python src/app/main.py
    ```
 
-The API will be available at `http://localhost:5000`
-
-## API Endpoints
-
-- `GET /` - Health check
-- `GET /fixed_costs` - Get all fixed costs
-- User endpoints available via `/users` blueprint
+API available at `http://localhost:5000`.
 
 ## Database Migrations
 
-- **Create migration**: `alembic revision --autogenerate -m "description"`
-- **Apply migrations**: `alembic upgrade head`
-- **Rollback**: `alembic downgrade -1`
+```bash
+# Create a new migration
+alembic revision --autogenerate -m "describe the change"
 
-## Dependencies
+# Apply all migrations
+alembic upgrade head
 
-See `requirements.txt` for full list of dependencies including:
-- Flask & Flask-SQLAlchemy
-- PostgreSQL drivers (psycopg2-binary, psycopg-binary)
-- Alembic for migrations
-- python-dotenv for environment management
+# Roll back one step
+alembic downgrade -1
+```
+
+## Manual API Testing
+
+The file `test.http` contains ready-to-use requests for all implemented endpoints.
+It can be executed directly in JetBrains IDEs (HTTP Client) or VS Code (REST Client extension).
+The login request automatically saves the `access_token` for subsequent requests.

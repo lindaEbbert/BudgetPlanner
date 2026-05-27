@@ -1,59 +1,102 @@
-# Frontend
+# BudgetPlanner — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.12.
+Angular 20 SPA with JWT authentication, lazy-loaded routing, and standalone components.
 
-## Development server
+## Tech Stack
 
-To start a local development server, run:
+- **Angular** 20 (standalone components, signals, OnPush)
+- **TypeScript** 5.8
+- **Angular CLI** 21.2
 
+## Architecture
+
+```
+src/app/
+├── core/                        # Singleton infrastructure (loaded once)
+│   ├── guards/
+│   │   └── auth.guard.ts        # Blocks unauthenticated access to protected routes
+│   ├── interceptors/
+│   │   └── jwt.interceptor.ts   # Attaches Authorization header to every request
+│   ├── services/
+│   │   ├── auth.service.ts      # Login, logout, token management
+│   │   └── api.service.ts       # Base HTTP service
+│   └── layout/
+│       └── layout.component     # App shell for authenticated pages (nav, router-outlet)
+├── features/                    # Lazy-loaded feature areas
+│   ├── auth/login/              # Login page (public)
+│   ├── dashboard/               # Overview (protected)
+│   ├── transactions/            # Transaction list (protected)
+│   ├── categories/              # Category management (protected)
+│   └── budgets/                 # Budget planning (protected)
+└── shared/
+    └── models/                  # TypeScript interfaces (User, Category, Transaction, ...)
+```
+
+## Routing
+
+| Path | Component | Auth required |
+|---|---|---|
+| `/login` | `LoginComponent` | No |
+| `/` | Redirects to `/dashboard` | Yes |
+| `/dashboard` | `DashboardComponent` | Yes |
+| `/transactions` | `TransactionsComponent` | Yes |
+| `/categories` | `CategoriesComponent` | Yes |
+| `/budgets` | `BudgetsComponent` | Yes |
+| `/**` | Redirects to `/` | — |
+
+All protected routes are wrapped by the `LayoutComponent` and guarded by `authGuard`.
+
+## Auth Flow
+
+1. User logs in via `POST /auth/login` → receives `access_token`
+2. Token is stored as `access_token` in `localStorage`
+3. `JwtInterceptor` reads the token and adds `Authorization: Bearer <token>` to every outgoing HTTP request
+4. `authGuard` checks for a valid token on each route change — redirects to `/login` if missing
+
+## Environment Configuration
+
+| File | Used for |
+|---|---|
+| `src/environments/environment.ts` | Production build |
+| `src/environments/environment.development.ts` | Local development (`ng serve`) |
+
+```ts
+export const environment = {
+  production: false,
+  apiBaseUrl: 'http://localhost:5000'
+};
+```
+
+## Development
+
+**Start dev server**
 ```bash
 ng serve
 ```
+App runs at `http://localhost:4200` with hot reload.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
+**Build for production**
 ```bash
 ng build
 ```
+Output goes to `dist/`. Production builds are optimized and minified.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
+**Run unit tests**
 ```bash
 ng test
 ```
+Uses [Vitest](https://vitest.dev/) as the test runner.
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
+**Generate a component**
 ```bash
-ng e2e
+ng generate component features/my-feature/my-feature
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Code Conventions
 
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **Standalone components** — no NgModules
+- **Signals** for local state (`signal()`, `computed()`)
+- **OnPush** change detection on all components
+- **Native control flow** (`@if`, `@for`) instead of `*ngIf` / `*ngFor`
+- **`inject()`** instead of constructor injection
+- **Reactive Forms** instead of template-driven forms
