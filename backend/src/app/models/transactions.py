@@ -14,7 +14,7 @@ class TransactionType(enum.Enum):
 class Transactions(db.Model):
     id = db.Column(db.Uuid, primary_key=True)
     user_id = db.Column(db.Uuid, db.ForeignKey('user.id'))
-    category_id = db.Column(db.Uuid, db.ForeignKey('categories.id'))
+    category_id = db.Column(db.Uuid, db.ForeignKey('categories.id'), nullable=True)
     fixed_cost_id = db.Column(db.Uuid, db.ForeignKey('fixed_costs.id'), nullable=True)
     name = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Numeric(12, 2), nullable=False)

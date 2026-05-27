@@ -10,6 +10,7 @@ from src.app.controller.user_controller import user_blueprint
 from src.app.controller.auth_controller import auth_blueprint
 from src.app.controller.category_controller import category_blueprint
 from src.app.controller.transaction_controller import transaction_blueprint
+from src.app.controller.dashboard_controller import dashboard_blueprint
 from src.app.models import *
 
 load_dotenv()
@@ -39,6 +40,7 @@ app.register_blueprint(user_blueprint)
 app.register_blueprint(auth_blueprint)
 app.register_blueprint(category_blueprint)
 app.register_blueprint(transaction_blueprint)
+app.register_blueprint(dashboard_blueprint)
 
 
 @app.route('/')

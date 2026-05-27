@@ -1,0 +1,43 @@
+h1 { margin-bottom: 24px; }
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+
+  mat-card {
+    text-align: center;
+    padding: 8px;
+
+    mat-icon {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+      opacity: 0.5;
+      margin-bottom: 8px;
+    }
+
+    .card-label  { color: #888; font-size: 13px; margin: 0 0 4px; }
+    .card-amount { font-size: 26px; font-weight: 700; margin: 0; }
+
+    &.income-card  .card-amount { color: #2e7d32; }
+    &.expense-card .card-amount { color: #c62828; }
+    &.positive     .card-amount { color: #2e7d32; }
+    &.negative     .card-amount { color: #c62828; }
+  }
+}
+
+.recent-card { margin-top: 8px; }
+
+.type-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  &.income  { background: #e8f5e9; color: #2e7d32; }
+  &.expense { background: #ffebee; color: #c62828; }
+}
+
+.income-amount  { color: #2e7d32; font-weight: 500; }
+.expense-amount { color: #c62828; font-weight: 500; }
