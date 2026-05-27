@@ -29,7 +29,7 @@ app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
 db.init_app(app)
 JWTManager(app)
 bcrypt.init_app(app)
-CORS(app, origins=["<http://localhost:4200>"])
+CORS(app, origins=["http://localhost:4200"])
 
 
 app.register_blueprint(user_controller.user_controller)

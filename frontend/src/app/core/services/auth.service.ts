@@ -16,7 +16,7 @@ export interface LoginDto {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly TOKEN_KEY = 'jwt_token';
+  private readonly TOKEN_KEY = 'access_token';
   private readonly baseUrl = environment.apiBaseUrl;
 
   constructor(
