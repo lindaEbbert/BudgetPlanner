@@ -3,9 +3,9 @@ from src.app.services import user_service as service
 from src.app.models import User
 
 
-user_controller = Blueprint('user_controller', __name__)
+user_blueprint = Blueprint('user_controller', __name__)
 
-@user_controller.route('/user', methods=['POST', 'GET'])
+@user_blueprint.route('/user', methods=['POST', 'GET'])
 def create_user():
     if request.method == 'POST':
         data = request.get_json()
@@ -21,13 +21,13 @@ def create_user():
         return jsonify({"message": "User not found"}), 404
 
 
-@user_controller.route('/users')
+@user_blueprint.route('/users')
 def get_all_users():
     users = service.get_all_users()
     return jsonify([user.to_dict() for user in users]), 200  # list comprehension
 
 
-@user_controller.route('/user/<int:user_id>', methods=['DELETE'])
+@user_blueprint.route('/user/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
     success = service.delete_user(user_id)
     if success:
@@ -36,7 +36,7 @@ def delete_user(user_id):
         return jsonify({'message': 'User not found'}), 404
 
 
-@user_controller.route('/user/<int:user_id>', methods=['PUT'])
+@user_blueprint.route('/user/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
     data = request.get_json()
     user = service.update_user(user_id, data)

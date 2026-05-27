@@ -6,8 +6,9 @@ from src.app.services.auth_service import bcrypt
 from dotenv import load_dotenv
 import os
 
-from src.app.controller import user_controller
+from src.app.controller.user_controller import user_blueprint
 from src.app.controller.auth_controller import auth_blueprint
+from src.app.controller.category_controller import category_blueprint
 from src.app.models import *
 
 load_dotenv()
@@ -25,6 +26,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = (f"postgresql://{DB_USER}:{DB_PASSWORD}"
                                          f"@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
+app.config['JWT_TOKEN_LOCATION'] = ['headers']
 
 db.init_app(app)
 JWTManager(app)
@@ -32,8 +34,10 @@ bcrypt.init_app(app)
 CORS(app, origins=["http://localhost:4200"])
 
 
-app.register_blueprint(user_controller.user_controller)
+app.register_blueprint(user_blueprint)
 app.register_blueprint(auth_blueprint)
+app.register_blueprint(category_blueprint)
+
 
 @app.route('/')
 def hello_world():
