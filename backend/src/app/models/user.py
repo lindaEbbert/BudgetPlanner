@@ -9,9 +9,3 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=db.func.now())
     updated_at = db.Column(db.DateTime, default=db.func.now(), onupdate=db.func.now())
     #fixed_costs = db.relationship('FixedCosts', backref='user')  #, secondary='user_fixed_costs')
-
-    def to_dict(self):
-        return {"id": self.id,
-                "name": self.name,
-                "email": self.email,
-                }
