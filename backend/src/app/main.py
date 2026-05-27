@@ -9,6 +9,7 @@ import os
 from src.app.controller.user_controller import user_blueprint
 from src.app.controller.auth_controller import auth_blueprint
 from src.app.controller.category_controller import category_blueprint
+from src.app.controller.transaction_controller import transaction_blueprint
 from src.app.models import *
 
 load_dotenv()
@@ -37,6 +38,7 @@ CORS(app, origins=["http://localhost:4200"])
 app.register_blueprint(user_blueprint)
 app.register_blueprint(auth_blueprint)
 app.register_blueprint(category_blueprint)
+app.register_blueprint(transaction_blueprint)
 
 
 @app.route('/')
