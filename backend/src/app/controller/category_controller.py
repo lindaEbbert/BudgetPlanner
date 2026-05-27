@@ -9,7 +9,6 @@ def category_to_dict(cat):
     return {
         'id': str(cat.id),
         'name': cat.name,
-        'type': cat.type.value,
         'userId': str(cat.user_id),
         'createdAt': cat.created_at.isoformat() if cat.created_at else None
     }
@@ -29,12 +28,11 @@ def create_category():
     user_id = get_jwt_identity()
     data = request.get_json()
     name = data.get('name')
-    category_type = data.get('type')
 
-    if not name or not category_type:
-        return jsonify({'error': 'Name und Typ erforderlich'}), 400
+    if not name:
+        return jsonify({'error': 'Name erforderlich'}), 400
 
-    category, error = category_service.create_category(user_id, name, category_type)
+    category, error = category_service.create_category(user_id, name)
     if error:
         return jsonify({'error': error}), 409
 
@@ -50,8 +48,7 @@ def update_category(category_id):
     category, error = category_service.update_category(
         category_id=category_id,
         user_id=user_id,
-        name=data.get('name'),
-        category_type=data.get('type')
+        name=data.get('name')
     )
     if error:
         return jsonify({'error': error}), 404
