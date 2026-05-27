@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -9,17 +9,17 @@ import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-layout',
-  standalone: true,
   imports: [
     RouterOutlet, RouterLink, RouterLinkActive,
     MatToolbarModule, MatSidenavModule,
     MatListModule, MatIconModule, MatButtonModule
   ],
   templateUrl: './layout.component.html',
-  styleUrl: './layout.component.scss'
+  styleUrl: './layout.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LayoutComponent {
-  constructor(private authService: AuthService) {}
+  private readonly authService = inject(AuthService);
 
   logout(): void {
     this.authService.logout();

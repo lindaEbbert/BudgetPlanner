@@ -31,13 +31,13 @@
           }
         </mat-form-field>
 
-        @if (errorMessage) {
-          <p class="error-msg">{{ errorMessage }}</p>
+        @if (errorMessage()) {
+          <p class="error-msg">{{ errorMessage() }}</p>
         }
 
         <button mat-raised-button color="primary" type="submit"
-                class="full-width" [disabled]="loginForm.invalid || isLoading">
-          @if (isLoading) {
+                class="full-width" [disabled]="loginForm.invalid || isLoading()">
+          @if (isLoading()) {
             <mat-spinner diameter="20" />
           } @else {
             <span>Anmelden</span>

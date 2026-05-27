@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -9,26 +9,24 @@ import { CategoryFormComponent } from './category-form/category-form.component';
 
 @Component({
   selector: 'app-categories',
-  standalone: true,
   imports: [MatTableModule, MatButtonModule, MatIconModule, MatDialogModule],
   templateUrl: './categories.component.html',
   styleUrl: './categories.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CategoriesComponent implements OnInit {
-  dataSource = new MatTableDataSource<Category>([]);
-  displayedColumns = ['name', 'type', 'actions'];
+export class CategoriesComponent {
+  private readonly categoryService = inject(CategoryService);
+  private readonly dialog = inject(MatDialog);
 
-  constructor(
-    private categoryService: CategoryService,
-    private dialog: MatDialog,
-  ) {}
+  readonly categories = signal<Category[]>([]);
+  readonly displayedColumns = ['name', 'actions'];
 
-  ngOnInit(): void {
+  constructor() {
     this.loadCategories();
   }
 
   loadCategories(): void {
-    this.categoryService.getCategories().subscribe((cats) => (this.dataSource.data = cats));
+    this.categoryService.getCategories().subscribe((cats) => this.categories.set(cats));
   }
 
   openCreateDialog(): void {

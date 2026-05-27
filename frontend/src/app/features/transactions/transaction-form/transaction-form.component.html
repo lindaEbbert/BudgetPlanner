@@ -1,0 +1,73 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Transaktion bearbeiten' : 'Neue Transaktion' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="form-layout">
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Bezeichnung</mat-label>
+      <input matInput formControlName="name">
+      @if (form.get('name')?.hasError('required')) {
+        <mat-error>Bezeichnung erforderlich</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="two-col">
+      <mat-form-field appearance="outline">
+        <mat-label>Betrag (€)</mat-label>
+        <input matInput formControlName="amount" type="number" step="0.01" min="0">
+        @if (form.get('amount')?.hasError('required')) {
+          <mat-error>Betrag erforderlich</mat-error>
+        }
+        @if (form.get('amount')?.hasError('min')) {
+          <mat-error>Muss größer 0 sein</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Typ</mat-label>
+        <mat-select formControlName="type">
+          <mat-option value="INCOME">Einnahme</mat-option>
+          <mat-option value="EXPENSE">Ausgabe</mat-option>
+          <mat-option value="INITIAL">Initiales Guthaben</mat-option>
+        </mat-select>
+        @if (form.get('type')?.hasError('required')) {
+          <mat-error>Typ erforderlich</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    @if (form.get('type')?.value !== 'INITIAL') {
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Kategorie</mat-label>
+        <mat-select formControlName="categoryId">
+          @for (cat of categories(); track cat.id) {
+            <mat-option [value]="cat.id">{{ cat.name }}</mat-option>
+          }
+        </mat-select>
+        @if (form.get('categoryId')?.hasError('required')) {
+          <mat-error>Kategorie erforderlich</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Datum</mat-label>
+      <input matInput [matDatepicker]="picker" formControlName="transactionDate">
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Beschreibung (optional)</mat-label>
+      <textarea matInput formControlName="description" rows="2"></textarea>
+    </mat-form-field>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Abbrechen</button>
+  <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid">
+    {{ isEdit ? 'Speichern' : 'Erstellen' }}
+  </button>
+</mat-dialog-actions>

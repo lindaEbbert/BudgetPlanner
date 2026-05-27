@@ -11,17 +11,6 @@
       }
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Typ</mat-label>
-      <mat-select formControlName="type">
-        <mat-option value="INCOME">Einnahme</mat-option>
-        <mat-option value="EXPENSE">Ausgabe</mat-option>
-      </mat-select>
-      @if (form.get('type')?.hasError('required')) {
-        <mat-error>Typ erforderlich</mat-error>
-      }
-    </mat-form-field>
-
   </form>
 </mat-dialog-content>
 

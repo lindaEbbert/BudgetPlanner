@@ -5,20 +5,11 @@
   </button>
 </div>
 
-<mat-table [dataSource]="dataSource" class="mat-elevation-z2">
+<mat-table [dataSource]="categories()" class="mat-elevation-z2">
 
   <ng-container matColumnDef="name">
     <mat-header-cell *matHeaderCellDef>Name</mat-header-cell>
     <mat-cell *matCellDef="let cat">{{ cat.name }}</mat-cell>
-  </ng-container>
-
-  <ng-container matColumnDef="type">
-    <mat-header-cell *matHeaderCellDef>Typ</mat-header-cell>
-    <mat-cell *matCellDef="let cat">
-      <span [class]="'type-badge ' + cat.type.toLowerCase()">
-        {{ cat.type === 'INCOME' ? 'Einnahme' : 'Ausgabe' }}
-      </span>
-    </mat-cell>
   </ng-container>
 
   <ng-container matColumnDef="actions">
@@ -37,6 +28,6 @@
   <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
 </mat-table>
 
-@if (dataSource.data.length === 0) {
+@if (categories().length === 0) {
   <p class="empty-state">Noch keine Kategorien. Erstelle deine erste Kategorie!</p>
 }

@@ -1,0 +1,49 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  h1 { margin: 0; }
+}
+
+.balance-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+
+  .balance-card {
+    text-align: center;
+    .label { color: #666; font-size: 13px; margin: 0 0 4px; }
+    .amount { font-size: 22px; font-weight: 600; margin: 0; }
+    &.income .amount  { color: #2e7d32; }
+    &.expense .amount { color: #c62828; }
+    &.positive .amount { color: #2e7d32; }
+    &.negative .amount { color: #c62828; }
+  }
+}
+
+.type-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  &.income  { background: #e8f5e9; color: #2e7d32; }
+  &.expense { background: #ffebee; color: #c62828; }
+}
+
+.income-amount  { color: #2e7d32; font-weight: 500; }
+.expense-amount { color: #c62828; font-weight: 500; }
+
+.voided-text { text-decoration: line-through; opacity: 0.5; }
+.voided-row  { opacity: 0.6; background: #fafafa; }
+.voided-badge {
+  background: #ef9a9a;
+  color: #b71c1c;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.empty-state { text-align: center; color: #999; margin-top: 48px; }
