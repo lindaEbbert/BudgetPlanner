@@ -1,0 +1,51 @@
+<div class="login-container">
+  <mat-card>
+
+    <mat-card-header>
+      <mat-card-title>BudgetPlanner</mat-card-title>
+      <mat-card-subtitle>Anmelden</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>E-Mail</mat-label>
+          <input matInput formControlName="email" type="email">
+          @if (loginForm.get('email')?.hasError('required')) {
+            <mat-error>E-Mail erforderlich</mat-error>
+          }
+          @if (loginForm.get('email')?.hasError('email')) {
+            <mat-error>Ungültige E-Mail-Adresse</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Passwort</mat-label>
+          <input matInput formControlName="password" type="password">
+          @if (loginForm.get('password')?.hasError('required')) {
+            <mat-error>Passwort erforderlich</mat-error>
+          }
+          @if (loginForm.get('password')?.hasError('minlength')) {
+            <mat-error>Mindestens 6 Zeichen</mat-error>
+          }
+        </mat-form-field>
+
+        @if (errorMessage) {
+          <p class="error-msg">{{ errorMessage }}</p>
+        }
+
+        <button mat-raised-button color="primary" type="submit"
+                class="full-width" [disabled]="loginForm.invalid || isLoading">
+          @if (isLoading) {
+            <mat-spinner diameter="20" />
+          } @else {
+            <span>Anmelden</span>
+          }
+        </button>
+
+      </form>
+    </mat-card-content>
+
+  </mat-card>
+</div>
