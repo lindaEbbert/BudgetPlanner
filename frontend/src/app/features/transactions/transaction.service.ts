@@ -10,10 +10,13 @@ export class TransactionService extends ApiService {
     super(http);
   }
 
-  getTransactions(includeVoided = false): Observable<Transaction[]> {
-    return this.http.get<Transaction[]>(
-      `${this.baseUrl}/transactions?include_voided=${includeVoided}`,
-    );
+  getTransactions(month?: number, year?: number, includeVoided = false): Observable<Transaction[]> {
+    const params: Record<string, string> = {
+      include_voided: includeVoided.toString(),
+    };
+    if (month) params['month'] = month.toString();
+    if (year) params['year'] = year.toString();
+    return this.http.get<Transaction[]>(`${this.baseUrl}/transactions`, { params });
   }
 
   createTransaction(dto: CreateTransactionDto): Observable<Transaction> {
@@ -28,7 +31,10 @@ export class TransactionService extends ApiService {
     return this.http.post<Transaction>(`${this.baseUrl}/transactions/${id}/void`, {});
   }
 
-  getBalance(): Observable<BalanceSummary> {
-    return this.http.get<BalanceSummary>(`${this.baseUrl}/transactions/balance`);
+  getBalance(month?: number, year?: number): Observable<BalanceSummary> {
+    const params: Record<string, string> = {};
+    if (month) params['month'] = month.toString();
+    if (year) params['year'] = year.toString();
+    return this.http.get<BalanceSummary>(`${this.baseUrl}/transactions/balance`, { params });
   }
 }

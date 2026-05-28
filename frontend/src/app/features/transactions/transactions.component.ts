@@ -9,6 +9,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TransactionService } from './transaction.service';
 import { Transaction, BalanceSummary } from '../../shared/models';
 import { TransactionFormComponent } from './transaction-form/transaction-form.component';
+import { MonthSelectorComponent} from '../../shared/components/month-selector/month-selector.component';
 
 @Component({
   selector: 'app-transactions',
@@ -21,6 +22,7 @@ import { TransactionFormComponent } from './transaction-form/transaction-form.co
     MatDialogModule,
     MatCardModule,
     MatTooltipModule,
+    MonthSelectorComponent,
   ],
   templateUrl: './transactions.component.html',
   styleUrl: './transactions.component.scss',
@@ -30,23 +32,37 @@ export class TransactionsComponent {
   private readonly transactionService = inject(TransactionService);
   private readonly dialog = inject(MatDialog);
 
+  private readonly now = new Date();
+  readonly selectedMonth = signal(this.now.getMonth() + 1);
+  readonly selectedYear = signal(this.now.getFullYear());
   readonly transactions = signal<Transaction[]>([]);
-  readonly balance = signal<BalanceSummary>({ income: 0, expense: 0, initialBalance: 0, balance: 0 });
+  readonly balance = signal<BalanceSummary>({
+    income: 0,
+    expense: 0,
+    initialBalance: 0,
+    balance: 0,
+  });
   readonly displayedColumns = ['date', 'name', 'type', 'amount', 'status', 'actions'];
 
   constructor() {
-    this.loadAll();
+    this.loadAll(this.selectedMonth(), this.selectedYear());
   }
 
-  loadAll(): void {
-    this.transactionService.getTransactions().subscribe((t) => this.transactions.set(t));
-    this.transactionService.getBalance().subscribe((b) => this.balance.set(b));
+  loadAll(month: number, year: number): void {
+    this.transactionService.getTransactions(month, year).subscribe((t) => this.transactions.set(t));
+    this.transactionService.getBalance(month, year).subscribe((b) => this.balance.set(b));
+  }
+
+  onMonthChange(event: { month: number; year: number }): void {
+    this.selectedMonth.set(event.month);
+    this.selectedYear.set(event.year);
+    this.loadAll(event.month, event.year);
   }
 
   openCreateDialog(): void {
     const ref = this.dialog.open(TransactionFormComponent, { width: '520px' });
     ref.afterClosed().subscribe((result) => {
-      if (result) this.loadAll();
+      if (result) this.loadAll(this.selectedMonth(), this.selectedYear());
     });
   }
 
@@ -56,7 +72,7 @@ export class TransactionsComponent {
       data: transaction,
     });
     ref.afterClosed().subscribe((result) => {
-      if (result) this.loadAll();
+      if (result) this.loadAll(this.selectedMonth(), this.selectedYear());
     });
   }
 
@@ -66,7 +82,9 @@ export class TransactionsComponent {
         'Transaktion wirklich stornieren? Sie bleibt sichtbar, wird aber nicht mehr gewertet.',
       )
     ) {
-      this.transactionService.voidTransaction(id).subscribe(() => this.loadAll());
+      this.transactionService
+        .voidTransaction(id)
+        .subscribe(() => this.loadAll(this.selectedMonth(), this.selectedYear()));
     }
   }
 }

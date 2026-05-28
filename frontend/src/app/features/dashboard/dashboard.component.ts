@@ -1,15 +1,19 @@
-import { Component, OnInit, signal, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
-import { environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { MonthSelectorComponent } from '../../shared/components/month-selector/month-selector.component';
 
 interface DashboardSummary {
-  balance: number;
-  totalIncome: number;
-  totalExpenses: number;
+  month: number;
+  year: number;
+  monthIncome: number;
+  monthExpenses: number;
+  projectedFixedCosts: number;
+  freeToUse: number;
   recentTransactions: {
     id: string;
     name: string;
@@ -27,20 +31,33 @@ interface DashboardSummary {
     DatePipe,
     MatCardModule,
     MatIconModule,
-    MatTableModule],
+    MatTableModule,
+    MonthSelectorComponent,
+  ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DashboardComponent implements OnInit {
-  readonly summary = signal<DashboardSummary | null>(null);
-  recentColumns = ['date', 'name', 'type', 'amount'];
-
+export class DashboardComponent {
   private readonly http = inject(HttpClient);
 
-  ngOnInit(): void {
+  readonly summary = signal<DashboardSummary | null>(null);
+  readonly recentColumns = ['date', 'name', 'type', 'amount'];
+
+  constructor() {
+    const now = new Date();
+    this.loadSummary(now.getMonth() + 1, now.getFullYear());
+  }
+
+  loadSummary(month: number, year: number): void {
     this.http
-      .get<DashboardSummary>(`${environment.apiBaseUrl}/dashboard`)
+      .get<DashboardSummary>(`${environment.apiBaseUrl}/dashboard`, {
+        params: { month: month.toString(), year: year.toString() },
+      })
       .subscribe((data) => this.summary.set(data));
+  }
+
+  onMonthChange(event: { month: number; year: number }): void {
+    this.loadSummary(event.month, event.year);
   }
 }

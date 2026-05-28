@@ -1,43 +1,59 @@
-<h1>Dashboard</h1>
+<div class="page-header">
+  <h1>Dashboard</h1>
+  <div class="header-actions">
+    <app-month-selector (monthChange)="onMonthChange($event)"></app-month-selector>
+  </div>
+</div>
 
-@if (summary()) {
+@if (summary(); as s) {
 
-  <!-- Summary Cards -->
   <div class="summary-cards">
 
-    <mat-card [class.positive]="summary()!.balance >= 0" [class.negative]="summary()!.balance < 0">
+    <mat-card [class.positive]="s.freeToUse >= 0" [class.negative]="s.freeToUse< 0">
       <mat-card-content>
         <mat-icon>account_balance_wallet</mat-icon>
-        <p class="card-label">Kontostand</p>
-        <p class="card-amount">{{ summary()!.balance | currency:'EUR':'symbol':'1.2-2':'de' }}</p>
+        <p class="card-label">Frei verfügbar</p>
+        <p class="card-amount"
+           [class.income-amount]="s.freeToUse >= 0"
+           [class.expense-amount]="s.freeToUse< 0">
+          {{ s.freeToUse | currency:'EUR':'symbol':'1.2-2':'de' }}
+        </p>
+        <p class="card-formula">Einnahmen − (Ausgaben + Fixkosten + Budgets)</p>
       </mat-card-content>
     </mat-card>
 
     <mat-card class="income-card">
       <mat-card-content>
         <mat-icon>trending_up</mat-icon>
-        <p class="card-label">Einnahmen gesamt</p>
-        <p class="card-amount">{{ summary()!.totalIncome | currency:'EUR':'symbol':'1.2-2':'de' }}</p>
+        <p class="card-label">Einnahmen {{ s.month }}/{{ s.year }}</p>
+        <p class="card-amount">{{ s.monthIncome | currency:'EUR':'symbol':'1.2-2':'de' }}</p>
       </mat-card-content>
     </mat-card>
 
     <mat-card class="expense-card">
       <mat-card-content>
         <mat-icon>trending_down</mat-icon>
-        <p class="card-label">Ausgaben gesamt</p>
-        <p class="card-amount">{{ summary()!.totalExpenses | currency:'EUR':'symbol':'1.2-2':'de' }}</p>
+        <p class="card-label">Ausgaben {{ s.month }}/{{ s.year }}</p>
+        <p class="card-amount">{{ s.monthExpenses | currency:'EUR':'symbol':'1.2-2':'de' }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-content>
+        <mat-icon>repeat</mat-icon>
+        <p class="card-label">Fixkosten-Rücklagen</p>
+        <p class="card-amount">{{ s.projectedFixedCosts | currency:'EUR':'symbol':'1.2-2':'de' }}</p>
       </mat-card-content>
     </mat-card>
 
   </div>
 
-  <!-- Recent Transactions -->
   <mat-card class="recent-card">
     <mat-card-header>
       <mat-card-title>Letzte Transaktionen</mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      <mat-table [dataSource]="summary()!.recentTransactions">
+      <mat-table [dataSource]="s.recentTransactions">
 
         <ng-container matColumnDef="date">
           <mat-header-cell *matHeaderCellDef>Datum</mat-header-cell>
@@ -58,9 +74,11 @@
           </mat-cell>
         </ng-container>
 
-        <ng-container matColumnDef="amount"> <!-- TODO: Initial Balance has no + or - and is black -->
+        <ng-container matColumnDef="amount">
           <mat-header-cell *matHeaderCellDef>Betrag</mat-header-cell>
-          <mat-cell *matCellDef="let t" [class.income-amount]="t.type === 'INCOME'" [class.expense-amount]="t.type === 'EXPENSE'">
+          <mat-cell *matCellDef="let t"
+                    [class.income-amount]="t.type === 'INCOME'"
+                    [class.expense-amount]="t.type === 'EXPENSE'">
             {{ t.type === 'INCOME' ? '+' : t.type === 'EXPENSE' ? '−' : '' }}{{ t.amount | currency:'EUR':'symbol':'1.2-2':'de' }}
           </mat-cell>
         </ng-container>

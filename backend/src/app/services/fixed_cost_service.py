@@ -124,7 +124,7 @@ def get_monthly_cost(interval_unit: IntervalUnitEnum, interval_value: int, amoun
 
 def get_needed_fc_depot_for_month(active_fc_list: list, active_month: int, active_year: int):
     """
-    
+
     :param active_fc_list:
     :param active_month:
     :param active_year:
@@ -135,3 +135,7 @@ def get_needed_fc_depot_for_month(active_fc_list: list, active_month: int, activ
         # gesamtbetrag - monatlicher betrag * monate bis zahlungsmonat
             # falls bereits gezahlt, dann 0
             # falls noch nicht gezahlt, dann restbetrag
+
+
+def remaining_fixed_costs_this_month():
+    pass

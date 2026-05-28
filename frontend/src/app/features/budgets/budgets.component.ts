@@ -35,7 +35,7 @@ export class BudgetsComponent {
   readonly categoryMap = computed(() => new Map(this.categories().map((c) => [c.id, c.name])));
 
   private readonly now = new Date();
-  readonly currentMonth = this.now.getMonth() + 1; // TODO: Könnte die +1 beim Dezember Probleme machen?
+  readonly currentMonth = this.now.getMonth() + 1;
   readonly currentYear = this.now.getFullYear();
 
   constructor() {

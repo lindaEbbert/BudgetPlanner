@@ -2,7 +2,7 @@ h1 { margin-bottom: 24px; }
 
 .summary-cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 
@@ -41,3 +41,17 @@ h1 { margin-bottom: 24px; }
 
 .income-amount  { color: #2e7d32; font-weight: 500; }
 .expense-amount { color: #c62828; font-weight: 500; }
+
+.header-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  h1 { margin: 0; }
+}

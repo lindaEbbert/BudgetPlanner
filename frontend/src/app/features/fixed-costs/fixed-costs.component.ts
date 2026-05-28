@@ -60,7 +60,7 @@ export class FixedCostsComponent {
   getIntervalLabel(fc: FixedCost): string {
     const labels: Record<string, string> = {
       DAY: 'tägl.',
-      WEEK: 'wöch.', // TODO: Täglich und Wöchentlich ausblenden
+      WEEK: 'wöch.',
       MONTH: 'mtl.',
       YEAR: 'jährl.',
     };
