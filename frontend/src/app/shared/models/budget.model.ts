@@ -9,7 +9,7 @@ export interface Budget {
   year: number;
   spend?: number;
   remaining?: number;
-  percentage?: number;
+  percentage: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -17,6 +17,6 @@ export interface Budget {
 export interface CreateBudgetDto {
   categoryId: string;
   limitAmount: number;
-  month: BudgetMonth;
+  month: number;
   year: number;
 }

@@ -1,0 +1,29 @@
+.budgets-page {
+  padding: 24px;
+  max-width: 800px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.budget-card {
+  margin-bottom: 16px;
+}
+
+.budget-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 0.875rem;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.percentage {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.87);
+}

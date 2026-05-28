@@ -1,1 +1,43 @@
-<p>budgets works!</p>
+<div class="budgets-page">
+  <div class="page-header">
+    <h1>Budgets — {{ currentMonth }}/{{ currentYear }}</h1>
+    <button mat-raised-button color="primary" (click)="openCreateDialog()">
+      <mat-icon>add</mat-icon> Neues Budget
+    </button>
+  </div>
+
+  @if (budgets().length === 0) {
+    <mat-card>
+      <mat-card-content>
+        <p>Noch keine Budgets für diesen Monat. Lege jetzt eines an!</p>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @for (budget of budgets(); track budget.id) {
+    <mat-card class="budget-card">
+      <mat-card-header>
+        <mat-card-title>{{ categoryMap().get(budget.categoryId) ?? '–' }}</mat-card-title>
+        <mat-card-subtitle>Limit: {{ budget.limitAmount | currency:'EUR' }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-progress-bar
+          mode="determinate"
+          [value]="budget.percentage"
+          [color]="getProgressColor(budget.percentage)">
+        </mat-progress-bar>
+        <div class="budget-stats">
+          <span>Ausgegeben: {{ budget.spend | currency:'EUR' }}</span>
+          <span class="percentage">{{ budget.percentage }}%</span>
+          <span>Verbleibend: {{ budget.remaining | currency:'EUR' }}</span>
+        </div>
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button mat-icon-button color="warn" (click)="deleteBudget(budget.id)"
+                aria-label="Budget löschen">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  }
+</div>
