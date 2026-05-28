@@ -12,6 +12,7 @@ from src.app.controller.category_controller import category_blueprint
 from src.app.controller.transaction_controller import transaction_blueprint
 from src.app.controller.dashboard_controller import dashboard_blueprint
 from src.app.controller.budget_controller import budget_blueprint
+from src.app.controller.fixed_cost_controller import fixed_cost_blueprint
 from src.app.models import *
 
 load_dotenv()
@@ -43,19 +44,12 @@ app.register_blueprint(category_blueprint)
 app.register_blueprint(transaction_blueprint)
 app.register_blueprint(dashboard_blueprint)
 app.register_blueprint(budget_blueprint)
+app.register_blueprint(fixed_cost_blueprint)
 
 
 @app.route('/')
 def hello_world():
     return 'Hello World!'
-
-
-
-@app.route('/fixed_costs')
-def get_all_fixed_costs():
-    fixed_costs = FixedCosts.query.all()
-    return jsonify([fixed_cost.to_dict() for fixed_cost in fixed_costs]), 200
-
 
 
 if __name__ == '__main__':
