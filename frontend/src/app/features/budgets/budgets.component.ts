@@ -9,6 +9,7 @@ import { BudgetService } from './budget.service';
 import { CategoryService } from '../categories/category.service';
 import { Budget, Category } from '../../shared/models';
 import { BudgetFormComponent } from './budget-form/budget-form.component';
+import { MonthSelectorComponent } from '../../shared/components/month-selector/month-selector.component';
 
 @Component({
   selector: 'app-budgets',
@@ -19,6 +20,7 @@ import { BudgetFormComponent } from './budget-form/budget-form.component';
     MatIconModule,
     MatProgressBarModule,
     MatDialogModule,
+    MonthSelectorComponent,
   ],
   templateUrl: './budgets.component.html',
   styleUrl: './budgets.component.scss',
@@ -29,14 +31,13 @@ export class BudgetsComponent {
   private readonly categoryService = inject(CategoryService);
   private readonly dialog = inject(MatDialog);
 
+  private readonly now = new Date();
   readonly budgets = signal<Budget[]>([]);
   readonly categories = signal<Category[]>([]);
+  readonly currentMonth = signal(this.now.getMonth() + 1);
+  readonly currentYear = signal(this.now.getFullYear());
 
   readonly categoryMap = computed(() => new Map(this.categories().map((c) => [c.id, c.name])));
-
-  private readonly now = new Date();
-  readonly currentMonth = this.now.getMonth() + 1;
-  readonly currentYear = this.now.getFullYear();
 
   constructor() {
     this.loadAll();
@@ -44,7 +45,7 @@ export class BudgetsComponent {
 
   loadAll(): void {
     this.budgetService
-      .getBudgets(this.currentMonth, this.currentYear)
+      .getBudgets(this.currentMonth(), this.currentYear())
       .subscribe((b) => this.budgets.set(b));
     this.categoryService.getCategories().subscribe((c) => this.categories.set(c));
   }
@@ -53,6 +54,12 @@ export class BudgetsComponent {
     if (percentage >= 90) return 'warn'; // rot: gefährlich
     if (percentage >= 70) return 'accent'; // gelb: Achtung
     return 'primary'; // grün: ok
+  }
+
+  onMonthChange(event: { month: number; year: number }): void {
+    this.currentMonth.set(event.month);
+    this.currentYear.set(event.year);
+    this.loadAll();
   }
 
   openCreateDialog(): void {

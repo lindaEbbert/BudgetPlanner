@@ -1,6 +1,7 @@
 <div class="budgets-page">
   <div class="page-header">
-    <h1>Budgets — {{ currentMonth }}/{{ currentYear }}</h1>
+    <h1>Budgets — {{ currentMonth() }}/{{ currentYear() }}</h1>
+    <app-month-selector (monthChange)="onMonthChange($event)"></app-month-selector>
     <button mat-raised-button color="primary" (click)="openCreateDialog()">
       <mat-icon>add</mat-icon> Neues Budget
     </button>

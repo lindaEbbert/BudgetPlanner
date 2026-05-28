@@ -5,7 +5,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { MonthSelectorComponent } from '../../shared/components/month-selector/month-selector.component';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 interface DashboardSummary {
   month: number;
@@ -32,7 +34,9 @@ interface DashboardSummary {
     MatCardModule,
     MatIconModule,
     MatTableModule,
-    MonthSelectorComponent,
+    MatDatepickerModule,
+    MatFormFieldModule,
+    MatInputModule,
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss',
@@ -44,9 +48,10 @@ export class DashboardComponent {
   readonly summary = signal<DashboardSummary | null>(null);
   readonly recentColumns = ['date', 'name', 'type', 'amount'];
 
+  readonly selectedDate = signal(new Date());
+
   constructor() {
-    const now = new Date();
-    this.loadSummary(now.getMonth() + 1, now.getFullYear());
+    this.loadSummary(this.selectedDate().getMonth() + 1, this.selectedDate().getFullYear());
   }
 
   loadSummary(month: number, year: number): void {
@@ -57,7 +62,9 @@ export class DashboardComponent {
       .subscribe((data) => this.summary.set(data));
   }
 
-  onMonthChange(event: { month: number; year: number }): void {
-    this.loadSummary(event.month, event.year);
+  onDateChange(date: Date | null): void {
+    if (!date) return;
+    this.selectedDate.set(date);
+    this.loadSummary(date.getMonth() + 1, date.getFullYear());
   }
 }

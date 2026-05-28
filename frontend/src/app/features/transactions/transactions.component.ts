@@ -11,7 +11,9 @@ import { Transaction, BalanceSummary } from '../../shared/models';
 import { TransactionFormComponent } from './transaction-form/transaction-form.component';
 import { CategoryService } from '../categories/category.service';
 import { Category } from '../../shared/models';
-import { MonthSelectorComponent} from '../../shared/components/month-selector/month-selector.component';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 
 @Component({
   selector: 'app-transactions',
@@ -24,7 +26,9 @@ import { MonthSelectorComponent} from '../../shared/components/month-selector/mo
     MatDialogModule,
     MatCardModule,
     MatTooltipModule,
-    MonthSelectorComponent,
+    MatDatepickerModule,
+    MatFormFieldModule,
+    MatInputModule,
   ],
   templateUrl: './transactions.component.html',
   styleUrl: './transactions.component.scss',
@@ -35,9 +39,9 @@ export class TransactionsComponent {
   private readonly categoryService = inject(CategoryService);
   private readonly dialog = inject(MatDialog);
 
-  private readonly now = new Date();
-  readonly selectedMonth = signal(this.now.getMonth() + 1);
-  readonly selectedYear = signal(this.now.getFullYear());
+  readonly selectedDate = signal(new Date());
+  readonly selectedMonth = computed(() => this.selectedDate().getMonth() + 1);
+  readonly selectedYear = computed(() => this.selectedDate().getFullYear());
   readonly transactions = signal<Transaction[]>([]);
   readonly categories = signal<Category[]>([]);
   readonly categoryMap = computed(() => new Map(this.categories().map((c) => [c.id, c.name])));
@@ -59,10 +63,10 @@ export class TransactionsComponent {
     this.categoryService.getCategories().subscribe((cats) => this.categories.set(cats));
   }
 
-  onMonthChange(event: { month: number; year: number }): void {
-    this.selectedMonth.set(event.month);
-    this.selectedYear.set(event.year);
-    this.loadAll(event.month, event.year);
+  onDateChange(date: Date | null): void {
+    if (!date) return;
+    this.selectedDate.set(date);
+    this.loadAll(date.getMonth() + 1, date.getFullYear());
   }
 
   openCreateDialog(): void {

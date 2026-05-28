@@ -9,6 +9,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FixedCostService } from './fixed-cost.service';
 import { FixedCost, FixedCostProjection } from '../../shared/models';
 import { FixedCostFormComponent } from './fixed-costs-form/fixed-costs-form.component';
+import { MonthSelectorComponent } from '../../shared/components/month-selector/month-selector.component';
 
 @Component({
   selector: 'app-fixed-costs',
@@ -21,6 +22,7 @@ import { FixedCostFormComponent } from './fixed-costs-form/fixed-costs-form.comp
     MatIconModule,
     MatCardModule,
     MatDialogModule,
+    MonthSelectorComponent,
   ],
   templateUrl: './fixed-costs.component.html',
   styleUrl: './fixed-costs.component.scss',
@@ -35,15 +37,15 @@ export class FixedCostsComponent {
   readonly projectionTotal = signal(0);
 
   private readonly now = new Date();
-  readonly currentMonth = this.now.getMonth() + 1;
-  readonly currentYear = this.now.getFullYear();
+  readonly currentMonth = signal(this.now.getMonth() + 1);
+  readonly currentYear = signal(this.now.getFullYear());
 
   readonly listColumns = ['name', 'amount', 'interval', 'startDate', 'actions'];
   readonly projectionColumns = ['name', 'interval', 'projectedAmount'];
 
   constructor() {
     this.loadFixedCosts();
-    this.loadProjections(this.currentMonth, this.currentYear);
+    this.loadProjections(this.currentMonth(), this.currentYear());
   }
 
   loadFixedCosts(): void {
@@ -55,6 +57,12 @@ export class FixedCostsComponent {
       this.projections.set(resp.projections);
       this.projectionTotal.set(resp.total);
     });
+  }
+
+  onMonthChange(event: { month: number; year: number }): void {
+    this.currentMonth.set(event.month);
+    this.currentYear.set(event.year);
+    this.loadProjections(this.currentMonth(), this.currentYear());
   }
 
   getIntervalLabel(fc: FixedCost): string {
@@ -73,7 +81,7 @@ export class FixedCostsComponent {
     ref.afterClosed().subscribe((result) => {
       if (result) {
         this.loadFixedCosts();
-        this.loadProjections(this.currentMonth, this.currentYear);
+        this.loadProjections(this.currentMonth(), this.currentYear());
       }
     });
   }
@@ -82,7 +90,7 @@ export class FixedCostsComponent {
     if (confirm('Fixkosten wirklich löschen?')) {
       this.fixedCostService.deleteFixedCost(id).subscribe(() => {
         this.loadFixedCosts();
-        this.loadProjections(this.currentMonth, this.currentYear);
+        this.loadProjections(this.currentMonth(), this.currentYear());
       });
     }
   }

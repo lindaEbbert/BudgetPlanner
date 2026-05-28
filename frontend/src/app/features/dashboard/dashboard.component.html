@@ -1,7 +1,14 @@
 <div class="page-header">
   <h1>Dashboard</h1>
   <div class="header-actions">
-    <app-month-selector (monthChange)="onMonthChange($event)"></app-month-selector>
+    <mat-form-field appearance="outline">
+      <mat-label>Datum</mat-label>
+      <input matInput [matDatepicker]="picker"
+             [value]="selectedDate()"
+             (dateChange)="onDateChange($event.value)">
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
   </div>
 </div>
 

@@ -1,6 +1,7 @@
 <div class="fixed-costs-page">
   <div class="page-header">
     <h1>Fixkosten</h1>
+    <app-month-selector (monthChange)="onMonthChange($event)"></app-month-selector>
     <button mat-raised-button color="primary" (click)="openCreateDialog()">
       <mat-icon>add</mat-icon> Neu
     </button>
@@ -53,7 +54,7 @@
     </mat-tab>
 
     <!-- Tab 2: Monatsvorschau -->
-    <mat-tab label="Monatsvorschau {{ currentMonth }}/{{ currentYear }}">
+    <mat-tab label="Monatsvorschau {{ currentMonth() }}/{{ currentYear() }}">
       <div class="tab-content">
         @if (projections().length === 0) {
           <p class="empty-state">Keine Fixkosten für diesen Monat.</p>
@@ -81,7 +82,7 @@
 
         <mat-card class="total-card">
           <mat-card-content>
-            <strong>Gesamte Fixkosten im Monat {{ currentMonth }}/{{ currentYear }}:</strong>
+            <strong>Gesamte Fixkosten im Monat {{ currentMonth() }}/{{ currentYear() }}:</strong>
             {{ projectionTotal() | currency:'EUR' }}
           </mat-card-content>
         </mat-card>
