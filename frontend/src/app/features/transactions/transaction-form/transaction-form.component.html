@@ -49,7 +49,17 @@
         }
       </mat-form-field>
     }
-
+    @if (form.get('type')?.value !== 'INITIAL') {
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Fixkosten-Zuordnung (optional)</mat-label>
+        <mat-select formControlName="fixedCostId">
+          <mat-option value="">Keine Zuordnung</mat-option>
+          @for (fc of fixedCosts(); track fc.id) {
+            <mat-option [value]="fc.id">{{ fc.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Datum</mat-label>
       <input matInput [matDatepicker]="picker" formControlName="transactionDate">

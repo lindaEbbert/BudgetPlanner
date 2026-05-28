@@ -21,6 +21,7 @@ export interface CreateTransactionDto {
   categoryId?: string;
   transactionDate: string;
   description?: string;
+  fixedCostId?: string;
 }
 
 export interface BalanceSummary {
