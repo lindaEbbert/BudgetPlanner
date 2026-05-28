@@ -3,15 +3,19 @@ export type IntervalUnit = 'DAY' | 'WEEK' | 'MONTH' | 'YEAR';
 export interface FixedCost {
   id: string;
   userId: string;
-  categoryId: string;
+  categoryId: string | null;
   name: string;
   description?: string;
   amount: number;
   intervalUnit: IntervalUnit;
   intervalValue: number;
   startDate: string;
-  nextDueDate: string;
-  is_active: boolean;
+  nextDueDate?: string | null;
+  isActive: boolean;
+}
+
+export interface FixedCostProjection extends FixedCost {
+  projectedAmount: number;
 }
 
 export interface CreateFixedCostDto {
@@ -21,4 +25,10 @@ export interface CreateFixedCostDto {
   intervalUnit: IntervalUnit;
   intervalValue: number;
   startDate: string;
+  categoryId?: string;
+}
+
+export interface ProjectionResponse {
+  projections: FixedCostProjection[];
+  total: number;
 }

@@ -1,0 +1,92 @@
+<div class="fixed-costs-page">
+  <div class="page-header">
+    <h1>Fixkosten</h1>
+    <button mat-raised-button color="primary" (click)="openCreateDialog()">
+      <mat-icon>add</mat-icon> Neu
+    </button>
+  </div>
+
+  <mat-tab-group>
+
+    <!-- Tab 1: Meine Fixkosten (CRUD) -->
+    <mat-tab label="Meine Fixkosten">
+      <div class="tab-content">
+        @if (fixedCosts().length === 0) {
+          <p class="empty-state">Noch keine Fixkosten angelegt.</p>
+        } @else {
+          <table mat-table [dataSource]="fixedCosts()" class="full-width">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Name</th>
+              <td mat-cell *matCellDef="let fc">{{ fc.name }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="amount">
+              <th mat-header-cell *matHeaderCellDef>Betrag</th>
+              <td mat-cell *matCellDef="let fc">{{ fc.amount | currency:'EUR' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="interval">
+              <th mat-header-cell *matHeaderCellDef>Intervall</th>
+              <td mat-cell *matCellDef="let fc">{{ getIntervalLabel(fc) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="startDate">
+              <th mat-header-cell *matHeaderCellDef>Start</th>
+              <td mat-cell *matCellDef="let fc">{{ fc.startDate | date:'dd.MM.yyyy' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let fc">
+                <button mat-icon-button color="warn" (click)="deleteFixedCost(fc.id)"
+                        aria-label="Fixkosten löschen">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="listColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: listColumns;"></tr>
+          </table>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- Tab 2: Monatsvorschau -->
+    <mat-tab label="Monatsvorschau {{ currentMonth }}/{{ currentYear }}">
+      <div class="tab-content">
+        @if (projections().length === 0) {
+          <p class="empty-state">Keine Fixkosten für diesen Monat.</p>
+        } @else {
+          <table mat-table [dataSource]="projections()" class="full-width">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Name</th>
+              <td mat-cell *matCellDef="let p">{{ p.name }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="interval">
+              <th mat-header-cell *matHeaderCellDef>Intervall</th>
+              <td mat-cell *matCellDef="let p">{{ getIntervalLabel(p) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="projectedAmount">
+              <th mat-header-cell *matHeaderCellDef>Betrag</th>
+              <td mat-cell *matCellDef="let p">{{ p.projectedAmount | currency:'EUR' }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="projectionColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: projectionColumns;"></tr>
+          </table>
+        }
+
+        <mat-card class="total-card">
+          <mat-card-content>
+            <strong>Gesamte Fixkosten im Monat {{ currentMonth }}/{{ currentYear }}:</strong>
+            {{ projectionTotal() | currency:'EUR' }}
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</div>

@@ -1,0 +1,29 @@
+.fixed-costs-page {
+  padding: 24px;
+  max-width: 900px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.tab-content {
+  padding: 16px 0;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.total-card {
+  margin-top: 16px;
+  background-color: #f5f5f5;
+}
+
+.empty-state {
+  color: rgba(0, 0, 0, 0.54);
+  padding: 16px 0;
+}
