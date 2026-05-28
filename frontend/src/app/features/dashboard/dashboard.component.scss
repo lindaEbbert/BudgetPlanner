@@ -14,11 +14,11 @@ h1 { margin-bottom: 24px; }
       font-size: 32px;
       width: 32px;
       height: 32px;
-      opacity: 0.5;
+      opacity: 0.8;
       margin-bottom: 8px;
     }
 
-    .card-label  { color: #888; font-size: 13px; margin: 0 0 4px; }
+    .card-label  { color: rgba(0, 0, 0, 0.8); font-size: 16px; margin: 0 0 10px; font-weight: 500}
     .card-amount { font-size: 26px; font-weight: 700; margin: 0; }
 
     &.income-card  .card-amount { color: #2e7d32; }
