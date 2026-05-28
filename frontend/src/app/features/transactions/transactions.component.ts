@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +9,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { TransactionService } from './transaction.service';
 import { Transaction, BalanceSummary } from '../../shared/models';
 import { TransactionFormComponent } from './transaction-form/transaction-form.component';
+import { CategoryService } from '../categories/category.service';
+import { Category } from '../../shared/models';
 import { MonthSelectorComponent} from '../../shared/components/month-selector/month-selector.component';
 
 @Component({
@@ -30,12 +32,15 @@ import { MonthSelectorComponent} from '../../shared/components/month-selector/mo
 })
 export class TransactionsComponent {
   private readonly transactionService = inject(TransactionService);
+  private readonly categoryService = inject(CategoryService);
   private readonly dialog = inject(MatDialog);
 
   private readonly now = new Date();
   readonly selectedMonth = signal(this.now.getMonth() + 1);
   readonly selectedYear = signal(this.now.getFullYear());
   readonly transactions = signal<Transaction[]>([]);
+  readonly categories = signal<Category[]>([]);
+  readonly categoryMap = computed(() => new Map(this.categories().map((c) => [c.id, c.name])));
   readonly balance = signal<BalanceSummary>({
     income: 0,
     expense: 0,
@@ -51,6 +56,7 @@ export class TransactionsComponent {
   loadAll(month: number, year: number): void {
     this.transactionService.getTransactions(month, year).subscribe((t) => this.transactions.set(t));
     this.transactionService.getBalance(month, year).subscribe((b) => this.balance.set(b));
+    this.categoryService.getCategories().subscribe((cats) => this.categories.set(cats));
   }
 
   onMonthChange(event: { month: number; year: number }): void {

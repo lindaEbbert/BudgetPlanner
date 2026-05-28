@@ -32,7 +32,7 @@
   </mat-card>
 </div>
 
-<!-- Transactions Table --> <!-- TODO: Add category -->
+<!-- Transactions Table -->
 <mat-table [dataSource]="transactions()" class="mat-elevation-z2">
 
   <ng-container matColumnDef="date">
@@ -48,9 +48,12 @@
   <ng-container matColumnDef="type">
     <mat-header-cell *matHeaderCellDef>Typ</mat-header-cell>
     <mat-cell *matCellDef="let t">
-      <span [class]="'type-badge ' + t.type.toLowerCase()">
-        {{ t.type === 'INCOME' ? 'Einnahme' : t.type === 'EXPENSE' ? 'Ausgabe' : 'Initial' }}
-      </span>
+  <span [class]="'type-badge ' + t.type.toLowerCase()">
+    {{ t.type === 'INCOME' ? 'Einnahme' : t.type === 'EXPENSE' ? 'Ausgabe' : 'Initial' }}
+  </span>
+      @if (t.fixedCostId) {
+        <mat-icon class="fixed-cost-icon">repeat</mat-icon>
+      }
     </mat-cell>
   </ng-container>
 
@@ -64,10 +67,12 @@
   </ng-container>
 
   <ng-container matColumnDef="status">
-    <mat-header-cell *matHeaderCellDef>Kategorie</mat-header-cell> <!-- TODO: Durch Kategorie ersetzen -->
+    <mat-header-cell *matHeaderCellDef>Kategorie</mat-header-cell>
     <mat-cell *matCellDef="let t">
       @if (t.isVoided) {
         <span class="voided-badge">Storniert</span>
+      } @else {
+        {{ t.categoryId ? (categoryMap().get(t.categoryId) ?? '—') : '—' }}
       }
     </mat-cell>
   </ng-container>
