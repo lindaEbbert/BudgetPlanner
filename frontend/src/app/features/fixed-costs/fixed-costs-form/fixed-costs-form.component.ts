@@ -32,8 +32,8 @@ export class FixedCostFormComponent {
   readonly intervalUnits = [
     { value: 'MONTH', label: 'Monatlich' },
     { value: 'YEAR', label: 'Jährlich' },
-    { value: 'WEEK', label: 'Wöchentlich' },
-    { value: 'DAY', label: 'Täglich' },
+   // { value: 'WEEK', label: 'Wöchentlich' },
+   // { value: 'DAY', label: 'Täglich' },
   ];
 
   readonly form = this.fb.group({
@@ -52,7 +52,7 @@ export class FixedCostFormComponent {
     this.fixedCostService.createFixedCost({
       name: value.name!,
       amount: value.amount!,
-      intervalUnit: value.intervalUnit as 'DAY' | 'WEEK' | 'MONTH' | 'YEAR',
+      intervalUnit: value.intervalUnit as 'MONTH' | 'YEAR',
       intervalValue: value.intervalValue!,
       startDate: value.startDate!.toISOString().split('T')[0],
       description: value.description || undefined,
