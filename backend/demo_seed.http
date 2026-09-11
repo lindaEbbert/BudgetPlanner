@@ -1,0 +1,2468 @@
+### =============================================================
+### BudgetPlanner – Demo-Daten Seed
+### Demo-User: demo@web-computing.de / demo12345
+### Zeitraum:  Dezember 2025 – Mai 2026
+###
+### Reihenfolge:
+###   1. Register
+###   2. Login  → Token wird gespeichert
+###   3. Kategorien anlegen (10 Stück, IDs werden gespeichert)
+###   4. Fixkosten anlegen  (10 Stück, IDs werden gespeichert)
+###   5. Transaktionen anlegen (Anfangsguthaben + 6 Monate)
+###   6. Budgets anlegen (6 Monate × 8 Kategorien)
+### =============================================================
+
+@baseUrl = http://localhost:5000
+
+
+### Register Demo-User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Demo Nutzer",
+  "email": "demo@web-computing.de",
+  "password": "demo12345"
+}
+
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "demo@web-computing.de",
+  "password": "demo12345"
+}
+
+> {%
+  client.global.set("token", response.body.access_token);
+%}
+
+
+### Kategorie: Wohnen
+POST {{baseUrl}}/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Wohnen"
+}
+
+> {%
+  client.global.set("catWohnen", response.body.id);
+%}
+
+###
+
+### Kategorie: Lebensmittel
+POST {{baseUrl}}/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Lebensmittel"
+}
+
+> {%
+  client.global.set("catLebensmittel", response.body.id);
+%}
+
+###
+
+### Kategorie: Transport
+POST {{baseUrl}}/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Transport"
+}
+
+> {%
+  client.global.set("catTransport", response.body.id);
+%}
+
+###
+
+### Kategorie: Freizeit & Medien
+POST {{baseUrl}}/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Freizeit & Medien"
+}
+
+> {%
+  client.global.set("catFreizeit", response.body.id);
+%}
+
+###
+
+### Kategorie: Gesundheit
+POST {{baseUrl}}/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Gesundheit"
+}
+
+> {%
+  client.global.set("catGesundheit", response.body.id);
+%}
+
+###
+
+### Kategorie: Kleidung
+POST {{baseUrl}}/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Kleidung"
+}
+
+> {%
+  client.global.set("catKleidung", response.body.id);
+%}
+
+###
+
+### Kategorie: Restaurant & Café
+POST {{baseUrl}}/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Restaurant & Café"
+}
+
+> {%
+  client.global.set("catRestaurant", response.body.id);
+%}
+
+###
+
+### Kategorie: Versicherungen
+POST {{baseUrl}}/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Versicherungen"
+}
+
+> {%
+  client.global.set("catVersicherung", response.body.id);
+%}
+
+###
+
+### Kategorie: Gehalt (Einnahme)
+POST {{baseUrl}}/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Gehalt"
+}
+
+> {%
+  client.global.set("catGehalt", response.body.id);
+%}
+
+###
+
+### Kategorie: Sonstiges (Einnahme)
+POST {{baseUrl}}/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Sonstiges"
+}
+
+> {%
+  client.global.set("catSonstiges", response.body.id);
+%}
+
+
+### Fixkosten: Miete (950 € / Monat)
+POST {{baseUrl}}/fixed-costs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Miete",
+  "description": "Kaltmiete + Nebenkosten",
+  "categoryId": "{{catWohnen}}",
+  "amount": 950.00,
+  "intervalUnit": "MONTH",
+  "intervalValue": 1,
+  "startDate": "2025-12-01"
+}
+
+> {%
+  client.global.set("fcMiete", response.body.id);
+%}
+
+###
+
+### Fixkosten: Strom & Gas (85 € / Monat)
+POST {{baseUrl}}/fixed-costs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Strom & Gas",
+  "description": "Abschlag Stadtwerke",
+  "categoryId": "{{catWohnen}}",
+  "amount": 85.00,
+  "intervalUnit": "MONTH",
+  "intervalValue": 1,
+  "startDate": "2025-12-03"
+}
+
+> {%
+  client.global.set("fcStrom", response.body.id);
+%}
+
+###
+
+### Fixkosten: Internet & Festnetz (39,99 € / Monat)
+POST {{baseUrl}}/fixed-costs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Internet & Festnetz",
+  "description": "Telekom MagentaZuhause",
+  "categoryId": "{{catWohnen}}",
+  "amount": 39.99,
+  "intervalUnit": "MONTH",
+  "intervalValue": 1,
+  "startDate": "2025-12-05"
+}
+
+> {%
+  client.global.set("fcInternet", response.body.id);
+%}
+
+###
+
+### Fixkosten: Handyvertrag (24,99 € / Monat)
+POST {{baseUrl}}/fixed-costs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Handyvertrag",
+  "description": "O2 Vertrag",
+  "categoryId": "{{catTransport}}",
+  "amount": 24.99,
+  "intervalUnit": "MONTH",
+  "intervalValue": 1,
+  "startDate": "2025-12-05"
+}
+
+> {%
+  client.global.set("fcHandy", response.body.id);
+%}
+
+###
+
+### Fixkosten: Netflix (13,99 € / Monat)
+POST {{baseUrl}}/fixed-costs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Netflix",
+  "description": "Standard-Abo",
+  "categoryId": "{{catFreizeit}}",
+  "amount": 13.99,
+  "intervalUnit": "MONTH",
+  "intervalValue": 1,
+  "startDate": "2025-12-15"
+}
+
+> {%
+  client.global.set("fcNetflix", response.body.id);
+%}
+
+###
+
+### Fixkosten: Spotify (9,99 € / Monat)
+POST {{baseUrl}}/fixed-costs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Spotify",
+  "description": "Premium",
+  "categoryId": "{{catFreizeit}}",
+  "amount": 9.99,
+  "intervalUnit": "MONTH",
+  "intervalValue": 1,
+  "startDate": "2025-12-15"
+}
+
+> {%
+  client.global.set("fcSpotify", response.body.id);
+%}
+
+###
+
+### Fixkosten: Rundfunkbeitrag (18,36 € / Monat)
+POST {{baseUrl}}/fixed-costs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Rundfunkbeitrag",
+  "description": "ARD ZDF Deutschlandradio",
+  "categoryId": "{{catFreizeit}}",
+  "amount": 18.36,
+  "intervalUnit": "MONTH",
+  "intervalValue": 1,
+  "startDate": "2025-12-15"
+}
+
+> {%
+  client.global.set("fcGEZ", response.body.id);
+%}
+
+###
+
+### Fixkosten: Fitnessstudio (39,90 € / Monat)
+POST {{baseUrl}}/fixed-costs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Fitnessstudio",
+  "description": "Urban Sports Club M",
+  "categoryId": "{{catGesundheit}}",
+  "amount": 39.90,
+  "intervalUnit": "MONTH",
+  "intervalValue": 1,
+  "startDate": "2025-12-01"
+}
+
+> {%
+  client.global.set("fcFitness", response.body.id);
+%}
+
+###
+
+### Fixkosten: KFZ-Versicherung (480 € / Jahr)
+POST {{baseUrl}}/fixed-costs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "KFZ-Versicherung",
+  "description": "Allianz Vollkasko",
+  "categoryId": "{{catVersicherung}}",
+  "amount": 480.00,
+  "intervalUnit": "YEAR",
+  "intervalValue": 1,
+  "startDate": "2026-01-02"
+}
+
+> {%
+  client.global.set("fcKfz", response.body.id);
+%}
+
+###
+
+### Fixkosten: Privathaftpflicht (75 € / Jahr)
+POST {{baseUrl}}/fixed-costs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Privathaftpflicht",
+  "description": "HUK-COBURG",
+  "categoryId": "{{catVersicherung}}",
+  "amount": 75.00,
+  "intervalUnit": "YEAR",
+  "intervalValue": 1,
+  "startDate": "2026-03-01"
+}
+
+> {%
+  client.global.set("fcHaftpflicht", response.body.id);
+%}
+
+
+### Anfangsguthaben (01.12.2025)
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Anfangsguthaben",
+  "amount": 5200.00,
+  "type": "INITIAL",
+  "transactionDate": "2025-12-01",
+  "description": "Initiales Guthaben beim Start"
+}
+
+###
+
+### Dezembergehalt
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Dezembergehalt",
+  "amount": 3200.00,
+  "type": "INCOME",
+  "categoryId": "{{catGehalt}}",
+  "transactionDate": "2025-12-01",
+  "description": "Monatsgehalt Dezember"
+}
+
+###
+
+### Miete Dezember
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Miete Dezember",
+  "amount": 950.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcMiete}}",
+  "transactionDate": "2025-12-01"
+}
+
+###
+
+### Fitnessstudio Dezember
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Fitnessstudio Dezember",
+  "amount": 39.90,
+  "type": "EXPENSE",
+  "categoryId": "{{catGesundheit}}",
+  "fixedCostId": "{{fcFitness}}",
+  "transactionDate": "2025-12-01"
+}
+
+###
+
+### Strom & Gas Dezember
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Strom & Gas Dezember",
+  "amount": 85.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcStrom}}",
+  "transactionDate": "2025-12-03"
+}
+
+###
+
+### Internet Dezember
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Internet Dezember",
+  "amount": 39.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcInternet}}",
+  "transactionDate": "2025-12-05"
+}
+
+###
+
+### Handyvertrag Dezember
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Handyvertrag Dezember",
+  "amount": 24.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "fixedCostId": "{{fcHandy}}",
+  "transactionDate": "2025-12-05"
+}
+
+###
+
+### REWE Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Wocheneinkauf",
+  "amount": 67.43,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2025-12-07"
+}
+
+###
+
+### Tanken Shell
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Tanken Shell",
+  "amount": 72.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "transactionDate": "2025-12-09"
+}
+
+###
+
+### Lidl Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Lidl Wocheneinkauf",
+  "amount": 54.18,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2025-12-12"
+}
+
+###
+
+### Netflix Dezember
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Netflix Dezember",
+  "amount": 13.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcNetflix}}",
+  "transactionDate": "2025-12-15"
+}
+
+###
+
+### Spotify Dezember
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Spotify Dezember",
+  "amount": 9.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcSpotify}}",
+  "transactionDate": "2025-12-15"
+}
+
+###
+
+### Rundfunkbeitrag Dezember
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Rundfunkbeitrag Dezember",
+  "amount": 18.36,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcGEZ}}",
+  "transactionDate": "2025-12-15"
+}
+
+###
+
+### Weihnachtsgeschenke H&M
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Weihnachtsgeschenke H&M",
+  "amount": 89.95,
+  "type": "EXPENSE",
+  "categoryId": "{{catKleidung}}",
+  "transactionDate": "2025-12-16"
+}
+
+###
+
+### Weihnachtsessen Restaurant
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Weihnachtsessen Restaurant",
+  "amount": 58.50,
+  "type": "EXPENSE",
+  "categoryId": "{{catRestaurant}}",
+  "transactionDate": "2025-12-22"
+}
+
+###
+
+### REWE Weihnachtseinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Weihnachtseinkauf",
+  "amount": 93.70,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2025-12-23"
+}
+
+###
+
+### Kaffeebar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Kaffeebar",
+  "amount": 12.50,
+  "type": "EXPENSE",
+  "categoryId": "{{catRestaurant}}",
+  "transactionDate": "2025-12-28"
+}
+
+###
+
+### Silvester Supermarkt
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Silvester Supermarkt",
+  "amount": 45.60,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2025-12-30"
+}
+
+###
+
+### Januargehalt
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Januargehalt",
+  "amount": 3200.00,
+  "type": "INCOME",
+  "categoryId": "{{catGehalt}}",
+  "transactionDate": "2026-01-01",
+  "description": "Monatsgehalt Januar"
+}
+
+###
+
+### Miete Januar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Miete Januar",
+  "amount": 950.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcMiete}}",
+  "transactionDate": "2026-01-01"
+}
+
+###
+
+### Fitnessstudio Januar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Fitnessstudio Januar",
+  "amount": 39.90,
+  "type": "EXPENSE",
+  "categoryId": "{{catGesundheit}}",
+  "fixedCostId": "{{fcFitness}}",
+  "transactionDate": "2026-01-01"
+}
+
+###
+
+### KFZ-Versicherung 2026
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "KFZ-Versicherung 2026",
+  "amount": 480.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catVersicherung}}",
+  "fixedCostId": "{{fcKfz}}",
+  "transactionDate": "2026-01-02",
+  "description": "Jahresprämie Allianz Vollkasko"
+}
+
+###
+
+### Strom & Gas Januar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Strom & Gas Januar",
+  "amount": 85.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcStrom}}",
+  "transactionDate": "2026-01-03"
+}
+
+###
+
+### Internet Januar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Internet Januar",
+  "amount": 39.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcInternet}}",
+  "transactionDate": "2026-01-05"
+}
+
+###
+
+### Handyvertrag Januar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Handyvertrag Januar",
+  "amount": 24.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "fixedCostId": "{{fcHandy}}",
+  "transactionDate": "2026-01-05"
+}
+
+###
+
+### REWE Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Wocheneinkauf",
+  "amount": 61.22,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-01-08"
+}
+
+###
+
+### Tanken Aral
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Tanken Aral",
+  "amount": 68.50,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "transactionDate": "2026-01-10"
+}
+
+###
+
+### Apotheke Januar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Apotheke Januar",
+  "amount": 23.45,
+  "type": "EXPENSE",
+  "categoryId": "{{catGesundheit}}",
+  "transactionDate": "2026-01-12"
+}
+
+###
+
+### Aldi Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Aldi Wocheneinkauf",
+  "amount": 48.90,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-01-14"
+}
+
+###
+
+### Netflix Januar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Netflix Januar",
+  "amount": 13.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcNetflix}}",
+  "transactionDate": "2026-01-15"
+}
+
+###
+
+### Spotify Januar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Spotify Januar",
+  "amount": 9.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcSpotify}}",
+  "transactionDate": "2026-01-15"
+}
+
+###
+
+### Rundfunkbeitrag Januar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Rundfunkbeitrag Januar",
+  "amount": 18.36,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcGEZ}}",
+  "transactionDate": "2026-01-15"
+}
+
+###
+
+### Winterjacke Zara
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Winterjacke Zara",
+  "amount": 119.95,
+  "type": "EXPENSE",
+  "categoryId": "{{catKleidung}}",
+  "transactionDate": "2026-01-18"
+}
+
+###
+
+### REWE Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Wocheneinkauf",
+  "amount": 74.33,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-01-21"
+}
+
+###
+
+### Mittagessen Kantine
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Mittagessen Kantine",
+  "amount": 38.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catRestaurant}}",
+  "transactionDate": "2026-01-24"
+}
+
+###
+
+### Lidl Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Lidl Wocheneinkauf",
+  "amount": 52.15,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-01-28"
+}
+
+###
+
+### Februargehalt
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Februargehalt",
+  "amount": 3200.00,
+  "type": "INCOME",
+  "categoryId": "{{catGehalt}}",
+  "transactionDate": "2026-02-01",
+  "description": "Monatsgehalt Februar"
+}
+
+###
+
+### Miete Februar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Miete Februar",
+  "amount": 950.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcMiete}}",
+  "transactionDate": "2026-02-01"
+}
+
+###
+
+### Fitnessstudio Februar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Fitnessstudio Februar",
+  "amount": 39.90,
+  "type": "EXPENSE",
+  "categoryId": "{{catGesundheit}}",
+  "fixedCostId": "{{fcFitness}}",
+  "transactionDate": "2026-02-01"
+}
+
+###
+
+### Strom & Gas Februar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Strom & Gas Februar",
+  "amount": 85.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcStrom}}",
+  "transactionDate": "2026-02-03"
+}
+
+###
+
+### Internet Februar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Internet Februar",
+  "amount": 39.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcInternet}}",
+  "transactionDate": "2026-02-05"
+}
+
+###
+
+### Handyvertrag Februar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Handyvertrag Februar",
+  "amount": 24.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "fixedCostId": "{{fcHandy}}",
+  "transactionDate": "2026-02-05"
+}
+
+###
+
+### REWE Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Wocheneinkauf",
+  "amount": 58.44,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-02-06"
+}
+
+###
+
+### Tanken Shell
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Tanken Shell",
+  "amount": 65.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "transactionDate": "2026-02-09"
+}
+
+###
+
+### Valentinstag Restaurant
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Valentinstag Restaurant",
+  "amount": 72.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catRestaurant}}",
+  "transactionDate": "2026-02-14",
+  "description": "Valentinstag Abendessen"
+}
+
+###
+
+### Netflix Februar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Netflix Februar",
+  "amount": 13.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcNetflix}}",
+  "transactionDate": "2026-02-15"
+}
+
+###
+
+### Spotify Februar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Spotify Februar",
+  "amount": 9.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcSpotify}}",
+  "transactionDate": "2026-02-15"
+}
+
+###
+
+### Rundfunkbeitrag Februar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Rundfunkbeitrag Februar",
+  "amount": 18.36,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcGEZ}}",
+  "transactionDate": "2026-02-15"
+}
+
+###
+
+### Lidl Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Lidl Wocheneinkauf",
+  "amount": 43.77,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-02-17"
+}
+
+###
+
+### Arztbesuch Praxis
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Arztbesuch Praxis",
+  "amount": 15.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catGesundheit}}",
+  "transactionDate": "2026-02-19"
+}
+
+###
+
+### Steuerrückerstattung
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Steuerrückerstattung",
+  "amount": 340.00,
+  "type": "INCOME",
+  "categoryId": "{{catSonstiges}}",
+  "transactionDate": "2026-02-20",
+  "description": "Einkommensteuer Erstattung 2024"
+}
+
+###
+
+### REWE Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Wocheneinkauf",
+  "amount": 69.12,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-02-24"
+}
+
+###
+
+### Märzgehalt
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Märzgehalt",
+  "amount": 3200.00,
+  "type": "INCOME",
+  "categoryId": "{{catGehalt}}",
+  "transactionDate": "2026-03-01",
+  "description": "Monatsgehalt März"
+}
+
+###
+
+### Miete März
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Miete März",
+  "amount": 950.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcMiete}}",
+  "transactionDate": "2026-03-01"
+}
+
+###
+
+### Fitnessstudio März
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Fitnessstudio März",
+  "amount": 39.90,
+  "type": "EXPENSE",
+  "categoryId": "{{catGesundheit}}",
+  "fixedCostId": "{{fcFitness}}",
+  "transactionDate": "2026-03-01"
+}
+
+###
+
+### Privathaftpflicht 2026
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Privathaftpflicht 2026",
+  "amount": 75.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catVersicherung}}",
+  "fixedCostId": "{{fcHaftpflicht}}",
+  "transactionDate": "2026-03-01",
+  "description": "Jahresprämie HUK-COBURG"
+}
+
+###
+
+### Strom & Gas März
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Strom & Gas März",
+  "amount": 85.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcStrom}}",
+  "transactionDate": "2026-03-03"
+}
+
+###
+
+### Internet März
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Internet März",
+  "amount": 39.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcInternet}}",
+  "transactionDate": "2026-03-05"
+}
+
+###
+
+### Handyvertrag März
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Handyvertrag März",
+  "amount": 24.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "fixedCostId": "{{fcHandy}}",
+  "transactionDate": "2026-03-05"
+}
+
+###
+
+### REWE Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Wocheneinkauf",
+  "amount": 71.55,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-03-07"
+}
+
+###
+
+### Tanken Aral
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Tanken Aral",
+  "amount": 70.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "transactionDate": "2026-03-11"
+}
+
+###
+
+### Frühjahrsmode Zara
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Frühjahrsmode Zara",
+  "amount": 134.90,
+  "type": "EXPENSE",
+  "categoryId": "{{catKleidung}}",
+  "transactionDate": "2026-03-13"
+}
+
+###
+
+### Netflix März
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Netflix März",
+  "amount": 13.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcNetflix}}",
+  "transactionDate": "2026-03-15"
+}
+
+###
+
+### Spotify März
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Spotify März",
+  "amount": 9.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcSpotify}}",
+  "transactionDate": "2026-03-15"
+}
+
+###
+
+### Rundfunkbeitrag März
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Rundfunkbeitrag März",
+  "amount": 18.36,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcGEZ}}",
+  "transactionDate": "2026-03-15"
+}
+
+###
+
+### Aldi Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Aldi Wocheneinkauf",
+  "amount": 56.30,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-03-18"
+}
+
+###
+
+### Restaurant Frühlingsessen
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Restaurant Frühlingsessen",
+  "amount": 44.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catRestaurant}}",
+  "transactionDate": "2026-03-21"
+}
+
+###
+
+### Kaffeebar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Kaffeebar",
+  "amount": 8.90,
+  "type": "EXPENSE",
+  "categoryId": "{{catRestaurant}}",
+  "transactionDate": "2026-03-24"
+}
+
+###
+
+### REWE Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Wocheneinkauf",
+  "amount": 63.40,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-03-26"
+}
+
+###
+
+### Aprilgehalt
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Aprilgehalt",
+  "amount": 3200.00,
+  "type": "INCOME",
+  "categoryId": "{{catGehalt}}",
+  "transactionDate": "2026-04-01",
+  "description": "Monatsgehalt April"
+}
+
+###
+
+### Miete April
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Miete April",
+  "amount": 950.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcMiete}}",
+  "transactionDate": "2026-04-01"
+}
+
+###
+
+### Fitnessstudio April
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Fitnessstudio April",
+  "amount": 39.90,
+  "type": "EXPENSE",
+  "categoryId": "{{catGesundheit}}",
+  "fixedCostId": "{{fcFitness}}",
+  "transactionDate": "2026-04-01"
+}
+
+###
+
+### Strom & Gas April
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Strom & Gas April",
+  "amount": 85.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcStrom}}",
+  "transactionDate": "2026-04-03"
+}
+
+###
+
+### Internet April
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Internet April",
+  "amount": 39.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcInternet}}",
+  "transactionDate": "2026-04-05"
+}
+
+###
+
+### Handyvertrag April
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Handyvertrag April",
+  "amount": 24.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "fixedCostId": "{{fcHandy}}",
+  "transactionDate": "2026-04-05"
+}
+
+###
+
+### Osterbrunch Restaurant
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Osterbrunch Restaurant",
+  "amount": 55.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catRestaurant}}",
+  "transactionDate": "2026-04-05",
+  "description": "Osterbrunch mit Familie"
+}
+
+###
+
+### REWE Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Wocheneinkauf",
+  "amount": 64.88,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-04-07"
+}
+
+###
+
+### Tanken Shell
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Tanken Shell",
+  "amount": 66.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "transactionDate": "2026-04-09"
+}
+
+###
+
+### Lidl Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Lidl Wocheneinkauf",
+  "amount": 47.60,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-04-12"
+}
+
+###
+
+### Netflix April
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Netflix April",
+  "amount": 13.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcNetflix}}",
+  "transactionDate": "2026-04-15"
+}
+
+###
+
+### Spotify April
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Spotify April",
+  "amount": 9.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcSpotify}}",
+  "transactionDate": "2026-04-15"
+}
+
+###
+
+### Rundfunkbeitrag April
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Rundfunkbeitrag April",
+  "amount": 18.36,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcGEZ}}",
+  "transactionDate": "2026-04-15"
+}
+
+###
+
+### Konzerttickets
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Konzerttickets",
+  "amount": 79.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "transactionDate": "2026-04-17",
+  "description": "Konzert Tickets Eventim"
+}
+
+###
+
+### REWE Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Wocheneinkauf",
+  "amount": 58.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-04-21"
+}
+
+###
+
+### Sneaker Nike
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Sneaker Nike",
+  "amount": 99.95,
+  "type": "EXPENSE",
+  "categoryId": "{{catKleidung}}",
+  "transactionDate": "2026-04-23"
+}
+
+###
+
+### Aldi Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Aldi Wocheneinkauf",
+  "amount": 53.20,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-04-28"
+}
+
+###
+
+### Apotheke Vitamine
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Apotheke Vitamine",
+  "amount": 18.90,
+  "type": "EXPENSE",
+  "categoryId": "{{catGesundheit}}",
+  "transactionDate": "2026-04-29"
+}
+
+###
+
+### Maigehalt
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Maigehalt",
+  "amount": 3200.00,
+  "type": "INCOME",
+  "categoryId": "{{catGehalt}}",
+  "transactionDate": "2026-05-01",
+  "description": "Monatsgehalt Mai"
+}
+
+###
+
+### Miete Mai
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Miete Mai",
+  "amount": 950.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcMiete}}",
+  "transactionDate": "2026-05-01"
+}
+
+###
+
+### Fitnessstudio Mai
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Fitnessstudio Mai",
+  "amount": 39.90,
+  "type": "EXPENSE",
+  "categoryId": "{{catGesundheit}}",
+  "fixedCostId": "{{fcFitness}}",
+  "transactionDate": "2026-05-01"
+}
+
+###
+
+### Strom & Gas Mai
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Strom & Gas Mai",
+  "amount": 85.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcStrom}}",
+  "transactionDate": "2026-05-03"
+}
+
+###
+
+### Internet Mai
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Internet Mai",
+  "amount": 39.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catWohnen}}",
+  "fixedCostId": "{{fcInternet}}",
+  "transactionDate": "2026-05-05"
+}
+
+###
+
+### Handyvertrag Mai
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Handyvertrag Mai",
+  "amount": 24.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "fixedCostId": "{{fcHandy}}",
+  "transactionDate": "2026-05-05"
+}
+
+###
+
+### REWE Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Wocheneinkauf",
+  "amount": 77.34,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-05-06"
+}
+
+###
+
+### Tanken Aral
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Tanken Aral",
+  "amount": 71.50,
+  "type": "EXPENSE",
+  "categoryId": "{{catTransport}}",
+  "transactionDate": "2026-05-08"
+}
+
+###
+
+### Muttertagsessen Restaurant
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Muttertagsessen Restaurant",
+  "amount": 62.00,
+  "type": "EXPENSE",
+  "categoryId": "{{catRestaurant}}",
+  "transactionDate": "2026-05-10",
+  "description": "Muttertagsessen"
+}
+
+###
+
+### Lidl Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Lidl Wocheneinkauf",
+  "amount": 50.45,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-05-13"
+}
+
+###
+
+### Netflix Mai
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Netflix Mai",
+  "amount": 13.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcNetflix}}",
+  "transactionDate": "2026-05-15"
+}
+
+###
+
+### Spotify Mai
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Spotify Mai",
+  "amount": 9.99,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcSpotify}}",
+  "transactionDate": "2026-05-15"
+}
+
+###
+
+### Rundfunkbeitrag Mai
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Rundfunkbeitrag Mai",
+  "amount": 18.36,
+  "type": "EXPENSE",
+  "categoryId": "{{catFreizeit}}",
+  "fixedCostId": "{{fcGEZ}}",
+  "transactionDate": "2026-05-15"
+}
+
+###
+
+### REWE Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "REWE Wocheneinkauf",
+  "amount": 68.90,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-05-20"
+}
+
+###
+
+### Kaffeebar
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Kaffeebar",
+  "amount": 11.40,
+  "type": "EXPENSE",
+  "categoryId": "{{catRestaurant}}",
+  "transactionDate": "2026-05-22"
+}
+
+###
+
+### Sommerkleidung C&A
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Sommerkleidung C&A",
+  "amount": 76.85,
+  "type": "EXPENSE",
+  "categoryId": "{{catKleidung}}",
+  "transactionDate": "2026-05-24"
+}
+
+###
+
+### Aldi Wocheneinkauf
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Aldi Wocheneinkauf",
+  "amount": 44.10,
+  "type": "EXPENSE",
+  "categoryId": "{{catLebensmittel}}",
+  "transactionDate": "2026-05-27"
+}
+
+###
+
+### Urlaubsrücklage übertragen
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Urlaubsrücklage übertragen",
+  "amount": 300.00,
+  "type": "INCOME",
+  "categoryId": "{{catSonstiges}}",
+  "transactionDate": "2026-05-28",
+  "description": "Umbuchung Tagesgeldkonto"
+}
+
+###
+
+### Budget Wohnen Dez 2025
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catWohnen}}",       "month": 12, "year": 2025, "limitAmount": 1100.00 }
+
+###
+
+### Budget Lebensmittel Dez 2025
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catLebensmittel}}", "month": 12, "year": 2025, "limitAmount": 250.00 }
+
+###
+
+### Budget Transport Dez 2025
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catTransport}}",    "month": 12, "year": 2025, "limitAmount": 150.00 }
+
+###
+
+### Budget Freizeit Dez 2025
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catFreizeit}}",     "month": 12, "year": 2025, "limitAmount": 60.00 }
+
+###
+
+### Budget Gesundheit Dez 2025
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catGesundheit}}",   "month": 12, "year": 2025, "limitAmount": 80.00 }
+
+###
+
+### Budget Kleidung Dez 2025
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catKleidung}}",     "month": 12, "year": 2025, "limitAmount": 100.00 }
+
+###
+
+### Budget Restaurant Dez 2025
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catRestaurant}}",   "month": 12, "year": 2025, "limitAmount": 80.00 }
+
+###
+
+### Budget Versicherungen Dez 2025
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catVersicherung}}", "month": 12, "year": 2025, "limitAmount": 60.00 }
+
+###
+
+### Budget Wohnen Jan 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catWohnen}}",       "month": 1, "year": 2026, "limitAmount": 1100.00 }
+
+###
+
+### Budget Lebensmittel Jan 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catLebensmittel}}", "month": 1, "year": 2026, "limitAmount": 250.00 }
+
+###
+
+### Budget Transport Jan 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catTransport}}",    "month": 1, "year": 2026, "limitAmount": 150.00 }
+
+###
+
+### Budget Freizeit Jan 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catFreizeit}}",     "month": 1, "year": 2026, "limitAmount": 60.00 }
+
+###
+
+### Budget Gesundheit Jan 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catGesundheit}}",   "month": 1, "year": 2026, "limitAmount": 80.00 }
+
+###
+
+### Budget Kleidung Jan 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catKleidung}}",     "month": 1, "year": 2026, "limitAmount": 100.00 }
+
+###
+
+### Budget Restaurant Jan 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catRestaurant}}",   "month": 1, "year": 2026, "limitAmount": 80.00 }
+
+###
+
+### Budget Versicherungen Jan 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catVersicherung}}", "month": 1, "year": 2026, "limitAmount": 60.00 }
+
+###
+
+### Budget Wohnen Feb 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catWohnen}}",       "month": 2, "year": 2026, "limitAmount": 1100.00 }
+
+###
+
+### Budget Lebensmittel Feb 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catLebensmittel}}", "month": 2, "year": 2026, "limitAmount": 250.00 }
+
+###
+
+### Budget Transport Feb 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catTransport}}",    "month": 2, "year": 2026, "limitAmount": 150.00 }
+
+###
+
+### Budget Freizeit Feb 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catFreizeit}}",     "month": 2, "year": 2026, "limitAmount": 60.00 }
+
+###
+
+### Budget Gesundheit Feb 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catGesundheit}}",   "month": 2, "year": 2026, "limitAmount": 80.00 }
+
+###
+
+### Budget Kleidung Feb 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catKleidung}}",     "month": 2, "year": 2026, "limitAmount": 100.00 }
+
+###
+
+### Budget Restaurant Feb 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catRestaurant}}",   "month": 2, "year": 2026, "limitAmount": 80.00 }
+
+###
+
+### Budget Versicherungen Feb 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catVersicherung}}", "month": 2, "year": 2026, "limitAmount": 60.00 }
+
+###
+
+### Budget Wohnen Mrz 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catWohnen}}",       "month": 3, "year": 2026, "limitAmount": 1100.00 }
+
+###
+
+### Budget Lebensmittel Mrz 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catLebensmittel}}", "month": 3, "year": 2026, "limitAmount": 250.00 }
+
+###
+
+### Budget Transport Mrz 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catTransport}}",    "month": 3, "year": 2026, "limitAmount": 150.00 }
+
+###
+
+### Budget Freizeit Mrz 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catFreizeit}}",     "month": 3, "year": 2026, "limitAmount": 60.00 }
+
+###
+
+### Budget Gesundheit Mrz 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catGesundheit}}",   "month": 3, "year": 2026, "limitAmount": 80.00 }
+
+###
+
+### Budget Kleidung Mrz 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catKleidung}}",     "month": 3, "year": 2026, "limitAmount": 100.00 }
+
+###
+
+### Budget Restaurant Mrz 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catRestaurant}}",   "month": 3, "year": 2026, "limitAmount": 80.00 }
+
+###
+
+### Budget Versicherungen Mrz 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catVersicherung}}", "month": 3, "year": 2026, "limitAmount": 60.00 }
+
+###
+
+### Budget Wohnen Apr 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catWohnen}}",       "month": 4, "year": 2026, "limitAmount": 1100.00 }
+
+###
+
+### Budget Lebensmittel Apr 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catLebensmittel}}", "month": 4, "year": 2026, "limitAmount": 250.00 }
+
+###
+
+### Budget Transport Apr 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catTransport}}",    "month": 4, "year": 2026, "limitAmount": 150.00 }
+
+###
+
+### Budget Freizeit Apr 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catFreizeit}}",     "month": 4, "year": 2026, "limitAmount": 60.00 }
+
+###
+
+### Budget Gesundheit Apr 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catGesundheit}}",   "month": 4, "year": 2026, "limitAmount": 80.00 }
+
+###
+
+### Budget Kleidung Apr 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catKleidung}}",     "month": 4, "year": 2026, "limitAmount": 100.00 }
+
+###
+
+### Budget Restaurant Apr 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catRestaurant}}",   "month": 4, "year": 2026, "limitAmount": 80.00 }
+
+###
+
+### Budget Versicherungen Apr 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catVersicherung}}", "month": 4, "year": 2026, "limitAmount": 60.00 }
+
+###
+
+### Budget Wohnen Mai 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catWohnen}}",       "month": 5, "year": 2026, "limitAmount": 1100.00 }
+
+###
+
+### Budget Lebensmittel Mai 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catLebensmittel}}", "month": 5, "year": 2026, "limitAmount": 250.00 }
+
+###
+
+### Budget Transport Mai 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catTransport}}",    "month": 5, "year": 2026, "limitAmount": 150.00 }
+
+###
+
+### Budget Freizeit Mai 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catFreizeit}}",     "month": 5, "year": 2026, "limitAmount": 60.00 }
+
+###
+
+### Budget Gesundheit Mai 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catGesundheit}}",   "month": 5, "year": 2026, "limitAmount": 80.00 }
+
+###
+
+### Budget Kleidung Mai 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catKleidung}}",     "month": 5, "year": 2026, "limitAmount": 100.00 }
+
+###
+
+### Budget Restaurant Mai 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catRestaurant}}",   "month": 5, "year": 2026, "limitAmount": 80.00 }
+
+###
+
+### Budget Versicherungen Mai 2026
+POST {{baseUrl}}/budgets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "categoryId": "{{catVersicherung}}", "month": 5, "year": 2026, "limitAmount": 60.00 }
