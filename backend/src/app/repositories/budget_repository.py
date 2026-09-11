@@ -25,16 +25,16 @@ class BudgetRepository(BaseRepository):
             year=year
         ).all()
 
-    def get_spent_for_category_month(
-        self, user_id, category_id, month_int: int, year: int
+    def get_spent_for_category_period(
+            self, user_id, category_id, from_date, to_date
     ) -> Decimal:
         result = db.session.query(func.sum(Transactions.amount)).filter(
             Transactions.user_id == user_id,
             Transactions.category_id == category_id,
             Transactions.type == TransactionType.EXPENSE,
             Transactions.is_voided == False,
-            extract('month', Transactions.transaction_date) == month_int,
-            extract('year', Transactions.transaction_date) == year
+            Transactions.transaction_date >= from_date,
+            Transactions.transaction_date <= to_date,
         ).scalar()
         return result or Decimal('0')
 

@@ -4,11 +4,15 @@ budget_repository = BudgetRepository()
 
 
 def get_user_budgets_with_summary(user_id, month_int: int, year: int) -> list:
-    budgets = budget_repository.get_by_month_year(user_id, month_int, year)
+    from datetime import date
+    from calendar import monthrange
+    budgets    = budget_repository.get_by_month_year(user_id, month_int, year)
+    from_date  = date(year, month_int, 1)
+    to_date    = date(year, month_int, monthrange(year, month_int)[1])
     result = []
     for b in budgets:
-        spent = float(budget_repository.get_spent_for_category_month(
-            user_id, b.category_id, month_int, year
+        spent = float(budget_repository.get_spent_for_category_period(
+            user_id, b.category_id, from_date, to_date
         ))
         limit = float(b.limit_amount)
         remaining = limit - spent
@@ -54,3 +58,18 @@ def delete_budget(budget_id, user_id):
         return False, "Keine Berechtigung"
     budget_repository.delete_budget(budget_id)
     return True, None
+
+
+def get_budgets_total_remaining(user_id, month: int, year: int, day: int) -> float:
+    from datetime import date
+    from_date = date(year, month, 1)
+    to_date   = date(year, month, day)
+    budgets = budget_repository.get_by_month_year(user_id, month, year)
+    total = 0.0
+    for b in budgets:
+        spent = float(budget_repository.get_spent_for_category_period(
+            user_id, b.category_id, from_date, to_date
+        ))
+        remaining = max(float(b.limit_amount) - spent, 0.0)
+        total += remaining
+    return round(total, 2)
