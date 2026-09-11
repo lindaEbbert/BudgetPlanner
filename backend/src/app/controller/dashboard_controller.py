@@ -10,6 +10,7 @@ dashboard_blueprint = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 def get_dashboard():
     user_id = get_jwt_identity()
     month = request.args.get('month', type=int)
-    year = request.args.get('year', type=int)
-    summary = dashboard_service.get_summary(user_id, month, year)
+    year  = request.args.get('year',  type=int)
+    day   = request.args.get('day',   type=int)
+    summary = dashboard_service.get_summary(user_id, month, year, day)
     return jsonify(summary), 200

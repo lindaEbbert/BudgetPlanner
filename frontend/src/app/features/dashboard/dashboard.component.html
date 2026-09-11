@@ -25,23 +25,27 @@
            [class.expense-amount]="s.freeToUse< 0">
           {{ s.freeToUse | currency:'EUR':'symbol':'1.2-2':'de' }}
         </p>
-        <p class="card-formula">Guthaben − (Fixkosten + Budgets)</p>
+        <p class="card-formula">Kontostand − (Fixkosten + Budgets)</p>
       </mat-card-content>
     </mat-card>
 
     <mat-card class="income-card">
       <mat-card-content>
-        <mat-icon>trending_up</mat-icon>
-        <p class="card-label">Einnahmen {{ s.month }}/{{ s.year }}</p>
-        <p class="card-amount">{{ s.monthIncome | currency:'EUR':'symbol':'1.2-2':'de' }}</p>
+        <mat-icon>account_balance</mat-icon>
+        <p class="card-label">Kontostand</p>
+        <p class="card-amount"
+           [class.income-amount]="s.balance >= 0"
+           [class.expense-amount]="s.balance < 0">
+          {{ s.balance | currency:'EUR':'symbol':'1.2-2':'de' }}
+        </p>
       </mat-card-content>
     </mat-card>
 
     <mat-card class="expense-card">
       <mat-card-content>
-        <mat-icon>trending_down</mat-icon>
-        <p class="card-label">Ausgaben {{ s.month }}/{{ s.year }}</p>
-        <p class="card-amount">{{ s.monthExpenses | currency:'EUR':'symbol':'1.2-2':'de' }}</p>
+        <mat-icon>savings</mat-icon>
+        <p class="card-label">In Budgets geblockt</p>
+        <p class="card-amount">{{ s.remainingBudgets | currency:'EUR':'symbol':'1.2-2':'de' }}</p>
       </mat-card-content>
     </mat-card>
 

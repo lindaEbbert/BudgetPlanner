@@ -12,8 +12,8 @@ import { MatInputModule } from '@angular/material/input';
 interface DashboardSummary {
   month: number;
   year: number;
-  monthIncome: number;
-  monthExpenses: number;
+  balance: number;
+  remainingBudgets: number;
   projectedFixedCosts: number;
   freeToUse: number;
   recentTransactions: {
@@ -51,13 +51,18 @@ export class DashboardComponent {
   readonly selectedDate = signal(new Date());
 
   constructor() {
-    this.loadSummary(this.selectedDate().getMonth() + 1, this.selectedDate().getFullYear());
+    const d = this.selectedDate();
+    this.loadSummary(d.getMonth() + 1, d.getFullYear(), d.getDate());
   }
 
-  loadSummary(month: number, year: number): void {
+  loadSummary(month: number, year: number, day: number): void {
     this.http
       .get<DashboardSummary>(`${environment.apiBaseUrl}/dashboard`, {
-        params: { month: month.toString(), year: year.toString() },
+        params: {
+          month: month.toString(),
+          year: year.toString(),
+          day: day.toString(),
+        },
       })
       .subscribe((data) => this.summary.set(data));
   }
@@ -65,6 +70,6 @@ export class DashboardComponent {
   onDateChange(date: Date | null): void {
     if (!date) return;
     this.selectedDate.set(date);
-    this.loadSummary(date.getMonth() + 1, date.getFullYear());
+    this.loadSummary(date.getMonth() + 1, date.getFullYear(), date.getDate());
   }
 }

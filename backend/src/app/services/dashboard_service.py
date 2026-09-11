@@ -1,12 +1,11 @@
 from decimal import Decimal
-from sqlalchemy import func, extract
+from sqlalchemy import extract, func
 from src.app.repositories.transaction_repository import TransactionRepository
 from src.app.models.transactions import Transactions, TransactionType
 from src.app.db import db
-from src.app.services import fixed_cost_service, budget_service
+from src.app.services import fixed_cost_service, budget_service, transaction_service
 
 transaction_repository = TransactionRepository()
-
 
 def _get_monthly_sum(user_id: str, month: int, year: int,
                      transaction_type: TransactionType) -> Decimal:
@@ -20,45 +19,47 @@ def _get_monthly_sum(user_id: str, month: int, year: int,
     return result or Decimal('0')
 
 
-def get_summary(user_id: str, month: int = None, year: int = None) -> dict:
+def get_summary(user_id: str, month: int = None, year: int = None, day: int = None) -> dict:
     from datetime import date
     today = date.today()
     if not month:
         month = today.month
     if not year:
-        year = today.year
+        year  = today.year
+    if not day:
+        day   = today.day
 
-    income = _get_monthly_sum(user_id, month, year, TransactionType.INCOME)
-    expenses = _get_monthly_sum(user_id, month, year, TransactionType.EXPENSE)
+    # Kontostand bis zum gewählten Tag (inkl. Übertrag aus Vormonaten)
+    bal = transaction_service.calculate_balance(user_id, month, year, day)
 
-    # sum up fixed costs for this month TODO
-    projections = fixed_cost_service.get_projections_for_month(user_id, month, year)
-    projected_fc = sum(p['projectedAmount'] for p in projections)
+    # Noch verfügbare Budget-Summe bis zum gewählten Tag
+    remaining_budgets = budget_service.get_budgets_total_remaining(user_id, month, year, day)
 
-    # sum remaining budget limits for this month
-    budgets_for_this_month = budget_service.get_user_budgets_with_summary(user_id, month, year)
-    remaining_budget_limits = sum(r['remaining'] for r in budgets_for_this_month)
+    # Notwendiges Fixkosten-Depot zum gewählten Tag
+    needed_fc_depot = fixed_cost_service.get_needed_fc_depot(user_id, month, year, day)
 
-    free_to_use = float(income) - float(expenses) - projected_fc - remaining_budget_limits # TODO
+    # Frei verfügbar = Kontostand minus was noch für Budgets + Fixkosten reserviert ist
+    free_to_use = bal['balance'] - remaining_budgets - needed_fc_depot
 
+    # Letzte 5 Transaktionen (zeitlich, alle Monate)
     recent = transaction_repository.get_by_user(user_id)[:5]
 
     return {
-        'month': month,
-        'year': year,
-        'monthIncome': float(income),
-        'monthExpenses': float(expenses),
-        'projectedFixedCosts': projected_fc,
-        'freeToUse': free_to_use,
+        'month':               month,
+        'year':                year,
+        'balance':             bal['balance'],
+        'remainingBudgets':    remaining_budgets,
+        'projectedFixedCosts': needed_fc_depot,
+        'freeToUse':           round(free_to_use, 2),
         'recentTransactions': [
             {
-                'id': str(t.id),
-                'name': t.name,
-                'amount': float(t.amount),
-                'type': t.type.value,
+                'id':              str(t.id),
+                'name':            t.name,
+                'amount':          float(t.amount),
+                'type':            t.type.value,
                 'transactionDate': t.transaction_date.isoformat() if t.transaction_date else None,
-                'isVoided': t.is_voided
+                'isVoided':        t.is_voided,
             }
             for t in recent
-        ]
+        ],
     }
