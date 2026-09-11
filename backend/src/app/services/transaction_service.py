@@ -1,15 +1,15 @@
 import uuid
-from decimal import Decimal
 from datetime import datetime
 from src.app.repositories.transaction_repository import TransactionRepository
 from src.app.models.transactions import Transactions, TransactionType
 from src.app.db import db
+from datetime import date
 
 transaction_repository = TransactionRepository()
 
 
-def get_user_transactions(user_id, include_voided=False, month: int = None, year: int = None):
-    return transaction_repository.get_by_user(user_id, include_voided, month, year)
+def get_user_transactions(user_id, include_voided=False, month: int = None, year: int = None, day: int = None):
+    return transaction_repository.get_by_user(user_id, include_voided, month, year, day)
 
 
 def create_transaction(user_id, name, amount, transaction_type,
@@ -69,18 +69,39 @@ def void_transaction(transaction_id, user_id):
     return transaction, None
 
 
-def calculate_balance(user_id, month: int = None, year: int = None):
-    if month and year:
-        income = transaction_repository.get_income_sum_for_month(user_id, month, year)
-        expenses = transaction_repository.get_expense_sum_for_month(user_id, month, year)
-        initial_balance = Decimal('0')  # Initial Balance ist kein Monatskonzept
-    else:
-        income = transaction_repository.get_income_sum(user_id)
-        expenses = transaction_repository.get_expense_sum(user_id)
+def get_carryover_from_prev_month(user_id, month: int = None, year: int = None):
+    start_of_month = date(year, month, 1)
+
+    initial_balance = transaction_repository.get_initial_balance_sum(user_id)
+    income_before = transaction_repository.get_income_sum_before_date(user_id, start_of_month)
+    expense_before = transaction_repository.get_expense_sum_before_date(user_id, start_of_month)
+    return initial_balance + income_before - expense_before
+
+
+def calculate_balance(user_id, month: int = None, year: int = None, day: int = None):
+    if month and year and day:
+        start_of_month = date(year, month, 1)
+        cutoff = date(year, month, day)
+
         initial_balance = transaction_repository.get_initial_balance_sum(user_id)
-    return {
-        'income': float(income),
-        'expense': float(expenses),
-        'initialBalance': float(initial_balance),
-        'balance': float(initial_balance + income - expenses)
-    }
+        carryover = get_carryover_from_prev_month(user_id, month, year)
+
+        income  = transaction_repository.get_income_sum_for_period(user_id, start_of_month, cutoff)
+        expense = transaction_repository.get_expense_sum_for_period(user_id, start_of_month, cutoff)
+
+        return {
+            'income':         float(income),
+            'expense':        float(expense),
+            'initialBalance': float(initial_balance),
+            'balance':        float(carryover + income - expense)
+        }
+    else:
+        income          = transaction_repository.get_income_sum(user_id)
+        expenses        = transaction_repository.get_expense_sum(user_id)
+        initial_balance = transaction_repository.get_initial_balance_sum(user_id)
+        return {
+            'income':         float(income),
+            'expense':        float(expenses),
+            'initialBalance': float(initial_balance),
+            'balance':        float(initial_balance + income - expenses)
+        }

@@ -42,6 +42,7 @@ export class TransactionsComponent {
   readonly selectedDate = signal(new Date());
   readonly selectedMonth = computed(() => this.selectedDate().getMonth() + 1);
   readonly selectedYear = computed(() => this.selectedDate().getFullYear());
+  readonly selectedDay = computed(() => this.selectedDate().getDate());
   readonly transactions = signal<Transaction[]>([]);
   readonly categories = signal<Category[]>([]);
   readonly categoryMap = computed(() => new Map(this.categories().map((c) => [c.id, c.name])));
@@ -54,25 +55,28 @@ export class TransactionsComponent {
   readonly displayedColumns = ['date', 'name', 'type', 'amount', 'status', 'actions'];
 
   constructor() {
-    this.loadAll(this.selectedMonth(), this.selectedYear());
+    const d = this.selectedDate();
+    this.loadAll(d.getMonth() + 1, d.getFullYear(), d.getDate());
   }
 
-  loadAll(month: number, year: number): void {
-    this.transactionService.getTransactions(month, year).subscribe((t) => this.transactions.set(t));
-    this.transactionService.getBalance(month, year).subscribe((b) => this.balance.set(b));
+  loadAll(month: number, year: number, day: number): void {
+    this.transactionService
+      .getTransactions(month, year, day)
+      .subscribe((t) => this.transactions.set(t));
+    this.transactionService.getBalance(month, year, day).subscribe((b) => this.balance.set(b));
     this.categoryService.getCategories().subscribe((cats) => this.categories.set(cats));
   }
 
   onDateChange(date: Date | null): void {
     if (!date) return;
     this.selectedDate.set(date);
-    this.loadAll(date.getMonth() + 1, date.getFullYear());
+    this.loadAll(date.getMonth() + 1, date.getFullYear(), date.getDate());
   }
 
   openCreateDialog(): void {
     const ref = this.dialog.open(TransactionFormComponent, { width: '520px' });
     ref.afterClosed().subscribe((result) => {
-      if (result) this.loadAll(this.selectedMonth(), this.selectedYear());
+      if (result) this.loadAll(this.selectedMonth(), this.selectedYear(), this.selectedDay());
     });
   }
 
@@ -82,7 +86,7 @@ export class TransactionsComponent {
       data: transaction,
     });
     ref.afterClosed().subscribe((result) => {
-      if (result) this.loadAll(this.selectedMonth(), this.selectedYear());
+      if (result) this.loadAll(this.selectedMonth(), this.selectedYear(), this.selectedDay());
     });
   }
 
@@ -94,7 +98,7 @@ export class TransactionsComponent {
     ) {
       this.transactionService
         .voidTransaction(id)
-        .subscribe(() => this.loadAll(this.selectedMonth(), this.selectedYear()));
+        .subscribe(() => this.loadAll(this.selectedMonth(), this.selectedYear(), this.selectedDay()));
     }
   }
 }

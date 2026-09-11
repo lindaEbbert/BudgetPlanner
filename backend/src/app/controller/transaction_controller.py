@@ -26,8 +26,9 @@ def transaction_to_dict(t):
 def get_balance():
     user_id = get_jwt_identity()
     month = request.args.get('month', type=int)
-    year = request.args.get('year', type=int)
-    balance = transaction_service.calculate_balance(user_id, month, year)
+    year  = request.args.get('year',  type=int)
+    day   = request.args.get('day',   type=int)
+    balance = transaction_service.calculate_balance(user_id, month, year, day)
     return jsonify(balance), 200
 
 
@@ -37,8 +38,9 @@ def get_transactions():
     user_id = get_jwt_identity()
     include_voided = request.args.get('include_voided', 'false').lower() == 'true'
     month = request.args.get('month', type=int)
-    year = request.args.get('year', type=int)
-    transactions = transaction_service.get_user_transactions(user_id, include_voided, month, year)
+    year  = request.args.get('year',  type=int)
+    day   = request.args.get('day',   type=int)
+    transactions = transaction_service.get_user_transactions(user_id, include_voided, month, year, day)
     return jsonify([transaction_to_dict(t) for t in transactions]), 200
 
 
