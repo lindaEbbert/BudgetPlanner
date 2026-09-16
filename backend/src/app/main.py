@@ -26,30 +26,40 @@ DB_NAME = os.getenv("DB_NAME")
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev_fallback_secret")
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = (f"postgresql://{DB_USER}:{DB_PASSWORD}"
-                                         f"@{DB_HOST}:{DB_PORT}/{DB_NAME}")
-app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
-app.config['JWT_TOKEN_LOCATION'] = ['headers']
-
-db.init_app(app)
-JWTManager(app)
-bcrypt.init_app(app)
-CORS(app, origins=["http://localhost:4200"])
+def build_database_uri(db_name):
+    return (f"postgresql://{DB_USER}:{DB_PASSWORD}"
+            f"@{DB_HOST}:{DB_PORT}/{db_name}")
 
 
-app.register_blueprint(user_blueprint)
-app.register_blueprint(auth_blueprint)
-app.register_blueprint(category_blueprint)
-app.register_blueprint(transaction_blueprint)
-app.register_blueprint(dashboard_blueprint)
-app.register_blueprint(budget_blueprint)
-app.register_blueprint(fixed_cost_blueprint)
+def create_app(config_overrides=None):
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = build_database_uri(DB_NAME)
+    app.config['JWT_SECRET_KEY'] = JWT_SECRET_KEY
+    app.config['JWT_TOKEN_LOCATION'] = ['headers']
+    if config_overrides:
+        app.config.update(config_overrides)
+
+    db.init_app(app)
+    JWTManager(app)
+    bcrypt.init_app(app)
+    CORS(app, origins=["http://localhost:4200"])
+
+    app.register_blueprint(user_blueprint)
+    app.register_blueprint(auth_blueprint)
+    app.register_blueprint(category_blueprint)
+    app.register_blueprint(transaction_blueprint)
+    app.register_blueprint(dashboard_blueprint)
+    app.register_blueprint(budget_blueprint)
+    app.register_blueprint(fixed_cost_blueprint)
+
+    @app.route('/')
+    def hello_world():
+        return 'Hello World!'
+
+    return app
 
 
-@app.route('/')
-def hello_world():
-    return 'Hello World!'
+app = create_app()
 
 
 if __name__ == '__main__':

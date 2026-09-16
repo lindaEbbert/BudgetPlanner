@@ -62,8 +62,13 @@ backend/
 │   ├── db.py                            # SQLAlchemy instance
 │   └── main.py                          # App factory & blueprint registration
 ├── alembic/                             # Migration files
+├── tests/
+│   ├── conftest.py                      # Test DB setup & shared fixtures
+│   └── test_*.py
 ├── alembic.ini
+├── pytest.ini
 ├── requirements.txt
+├── requirements-dev.txt                 # requirements.txt + test tooling
 └── test.http                            # Manual API test file
 ```
 
@@ -204,6 +209,37 @@ alembic upgrade head
 # Roll back one step
 alembic downgrade -1
 ```
+
+## Automated Tests
+
+Tests use `pytest` and run against a separate PostgreSQL database, never the
+development database from `DB_NAME`.
+
+```bash
+pip install -r requirements-dev.txt   # once
+pytest                                # run from backend/
+pytest tests/test_category_service.py # a single file
+```
+
+- **Test database**: `<DB_NAME>_test` (override with `TEST_DB_NAME` in `.env`;
+  the name must end in `_test`), using the same
+  `DB_USER`/`DB_PASSWORD`/`DB_HOST`/`DB_PORT`. It is created
+  automatically on the first run, which requires the DB user to have the
+  `CREATEDB` privilege.
+- **Reset**: each test run drops and recreates the schema from the models
+  (`db.create_all()`, not Alembic); after every test all tables are truncated,
+  so tests never see each other's data.
+- **Fixtures** (`tests/conftest.py`):
+
+  | Fixture | Provides |
+  |---|---|
+  | `app` | Flask app configured for the test database |
+  | `client` | Flask test client |
+  | `user` | A registered test user |
+  | `access_token` | A valid JWT for `user` |
+  | `auth_headers` | `{"Authorization": "Bearer <access_token>"}` for `client` requests |
+
+  Every test runs inside an app context, so services can be called directly.
 
 ## Manual API Testing
 

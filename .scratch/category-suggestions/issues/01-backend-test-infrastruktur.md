@@ -8,13 +8,23 @@ test-first (TDD) entwickelt werden können.
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `pytest` ist als Dev-Dependency eingerichtet und über ein
+- [x] `pytest` ist als Dev-Dependency eingerichtet und über ein
       dokumentiertes Kommando ausführbar
-- [ ] Tests laufen gegen eine isolierte Test-Datenbank (kein Zugriff auf die
+- [x] Tests laufen gegen eine isolierte Test-Datenbank (kein Zugriff auf die
       echte Entwicklungs-DB), die zwischen Testläufen zurückgesetzt wird
-- [ ] Es existiert eine wiederverwendbare Fixture, die einen Testnutzer
+- [x] Es existiert eine wiederverwendbare Fixture, die einen Testnutzer
       anlegt und einen gültigen JWT liefert
-- [ ] Ein triviales Beispieltest (z. B. gegen einen bestehenden Service)
+- [x] Ein triviales Beispieltest (z. B. gegen einen bestehenden Service)
       läuft grün und demonstriert den Aufbau
+
+## Comments
+
+- 2026-09-16: Umgesetzt. `pytest` über `backend/requirements-dev.txt`,
+  Aufruf `pytest` in `backend/` (siehe README "Automated Tests"). Tests
+  laufen gegen die Postgres-DB `<DB_NAME>_test` (wird automatisch angelegt,
+  Schema pro Lauf neu, Tabellen nach jedem Test geleert). Fixtures `app`,
+  `client`, `user`, `access_token`, `auth_headers` in
+  `backend/tests/conftest.py`. `main.py` hat dafür eine App-Factory
+  `create_app()` bekommen; das modulweite `app` bleibt erhalten.
