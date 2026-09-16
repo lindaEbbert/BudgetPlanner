@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { provideNativeDateAdapter } from '@angular/material/core';
+import { MatSelectHarness } from '@angular/material/select/testing';
 import { TransactionFormComponent } from './transaction-form.component';
 import { Category, FixedCost, Transaction } from '../../../shared/models';
 
@@ -31,7 +33,7 @@ const uncategorizedGym: FixedCost = {
   amount: 30,
 };
 
-const rentPayment: Transaction = {
+const rentTransaction: Transaction = {
   id: 'tx-rent-march',
   userId: 'user-1',
   categoryId: 'cat-leisure',
@@ -56,15 +58,18 @@ function setup(editedTransaction: Transaction | null = null) {
     ],
   });
 
-  const component = TestBed.createComponent(TransactionFormComponent).componentInstance;
+  const fixture = TestBed.createComponent(TransactionFormComponent);
+  const component = fixture.componentInstance;
   const httpMock = TestBed.inject(HttpTestingController);
   httpMock.expectOne((req) => req.url.endsWith('/categories')).flush(categories);
   httpMock.expectOne((req) => req.url.endsWith('/fixed-costs')).flush([rent, uncategorizedGym]);
 
-  return { component, httpMock };
+  return { fixture, component, httpMock };
 }
 
 describe('TransactionFormComponent – fixed-cost assignment', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
   it('fills the category from the selected fixed cost', () => {
     const { component } = setup();
 
@@ -82,25 +87,33 @@ describe('TransactionFormComponent – fixed-cost assignment', () => {
     expect(component.form.controls.categoryId.value).toBe('cat-leisure');
   });
 
-  it('keeps a category the user picks after the fixed cost filled it in', () => {
-    const { component } = setup();
-    component.form.controls.fixedCostId.setValue(rent.id);
+  it('lets the user pick a different category after the fixed cost filled it in', async () => {
+    const { fixture, component } = setup();
+    const loader = TestbedHarnessEnvironment.loader(fixture);
+    const fixedCostSelect = await loader.getHarness(
+      MatSelectHarness.with({ selector: '[formControlName="fixedCostId"]' }),
+    );
+    const categorySelect = await loader.getHarness(
+      MatSelectHarness.with({ selector: '[formControlName="categoryId"]' }),
+    );
+    await fixedCostSelect.clickOptions({ text: 'Miete' });
+    expect(await categorySelect.getValueText()).toBe('Wohnen');
 
-    component.form.controls.categoryId.setValue('cat-leisure');
+    await categorySelect.clickOptions({ text: 'Freizeit' });
 
-    expect(component.form.controls.categoryId.enabled).toBe(true);
+    expect(await categorySelect.getValueText()).toBe('Freizeit');
     expect(component.form.controls.categoryId.value).toBe('cat-leisure');
   });
 
   describe('when editing an existing transaction', () => {
     it('keeps the stored category when the form opens', () => {
-      const { component } = setup(rentPayment);
+      const { component } = setup(rentTransaction);
 
       expect(component.form.controls.categoryId.value).toBe('cat-leisure');
     });
 
     it('fills the category from a newly selected fixed cost', () => {
-      const { component } = setup({ ...rentPayment, fixedCostId: undefined });
+      const { component } = setup({ ...rentTransaction, fixedCostId: undefined });
 
       component.form.controls.fixedCostId.setValue(rent.id);
 
