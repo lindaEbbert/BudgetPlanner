@@ -66,14 +66,11 @@ export class TransactionFormComponent {
       categoryControl.updateValueAndValidity();
     });
     this.form.controls.fixedCostId.valueChanges.subscribe((fixedCostId) => {
-      if (fixedCostId) {
-        const fc = this.fixedCosts().find((f) => f.id === fixedCostId);
-        if (fc) {
-          this.form.controls.amount.setValue(fc.amount);
-          if (fc.categoryId) {
-            this.form.controls.categoryId.setValue(fc.categoryId);
-          }
-        }
+      const fc = this.fixedCosts().find((f) => f.id === fixedCostId);
+      if (!fc) return;
+      this.form.controls.amount.setValue(fc.amount);
+      if (fc.categoryId) {
+        this.form.controls.categoryId.setValue(fc.categoryId);
       }
     });
   }
