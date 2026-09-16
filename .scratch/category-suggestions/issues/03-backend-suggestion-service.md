@@ -2,7 +2,8 @@
 
 **What to build:** Ein neuer Service ermittelt für gegebene Transaktionsdaten
 (Name, Beschreibung, Typ) und die existierenden Categories eines Nutzers per
-OpenAI-Aufruf (über `ai-sdk-python`) entweder eine passende bestehende
+LLM-Aufruf (`glm-4.7-flash` über [chat.z.ai](https://chat.z.ai/), via
+`ai-sdk-python`) entweder eine passende bestehende
 Category, einen Vorschlag für eine neue Category, oder kein Ergebnis. Ein
 neuer JWT-geschützter Endpoint macht das für das Frontend nutzbar; per
 `test.http` direkt verifizierbar, unabhängig vom Frontend.
@@ -25,6 +26,11 @@ neuer JWT-geschützter Endpoint macht das für das Frontend nutzbar; per
 - [ ] Test: Wirft der LLM-Aufruf einen Fehler/Timeout, liefert der Service
       ein klar erkennbares "kein Ergebnis" statt die Exception
       durchzureichen
-- [ ] `OPENAI_API_KEY` wird über eine Umgebungsvariable konfiguriert;
+- [ ] `Z_AI_API_KEY` wird über eine Umgebungsvariable konfiguriert;
       `requirements.txt` und `backend/README.md` sind aktualisiert
 - [ ] Endpoint ist wie bestehende Endpoints JWT-geschützt
+
+## Comments
+
+- 2026-09-16: Provider auf `glm-4.7-flash` (chat.z.ai) statt OpenAI
+  festgelegt, siehe [ADR 0011](../../../docs/adr/0011-category-suggestions-via-external-llm.md).

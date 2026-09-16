@@ -17,9 +17,10 @@ sie manuell auswählen zu müssen:
 
 - Ist eine Fixed-Cost-Zuordnung gewählt, wird deren eigene Category
   automatisch übernommen (wie schon heute beim Betrag).
-- Andernfalls kann ein externer LLM-Aufruf (OpenAI, über `ai-sdk-python`) den
-  Namen, die Beschreibung und den Typ der Transaktion gegen die bestehenden
-  Categories des Nutzers abgleichen und eine passende vorschlagen.
+- Andernfalls kann ein externer LLM-Aufruf (`glm-4.7-flash` über
+  [chat.z.ai](https://chat.z.ai/), via `ai-sdk-python`) den Namen, die
+  Beschreibung und den Typ der Transaktion gegen die bestehenden Categories
+  des Nutzers abgleichen und eine passende vorschlagen.
 - Ist das Category-Feld leer, passiert das automatisch beim Verlassen des
   Namensfelds. Ist es bereits belegt, holt ein expliziter Button den
   Vorschlag auf Wunsch nach und zeigt ihn zur Bestätigung an, bevor er das
@@ -81,7 +82,7 @@ für die Begründung der Technologie-Entscheidung und den Glossar-Eintrag
 15. Als Entwickler möchte ich, dass der externe LLM-Aufruf ausschließlich
     serverseitig im Backend erfolgt, damit kein API-Key im Frontend landet
     und die fachliche Logik gemäß ADR 0010 im Service bleibt.
-16. Als Entwickler möchte ich, dass der OpenAI-API-Key über eine
+16. Als Entwickler möchte ich, dass der z.ai-API-Key über eine
     Umgebungsvariable konfiguriert wird, damit keine Zugangsdaten im Code
     landen.
 17. Als Nutzer möchte ich, dass das Formular bei einem Fehlschlagen des
@@ -101,15 +102,16 @@ für die Begründung der Technologie-Entscheidung und den Glossar-Eintrag
 - Neuer Backend-Service (analog zu den bestehenden Services unter
   `services/`), der: die existierenden Categories des Nutzers lädt, daraus
   zusammen mit `name`/`description`/`type` der Transaction einen Prompt baut,
-  `ai_sdk.generate_object` (Paket `ai-sdk-python`, Provider `openai(...)`)
-  mit einem Pydantic-Schema aufruft, das entweder eine existierende
+  `ai_sdk.generate_object` (Paket `ai-sdk-python`, konfiguriert auf
+  `glm-4.7-flash` über den OpenAI-kompatiblen Endpoint von chat.z.ai) mit
+  einem Pydantic-Schema aufruft, das entweder eine existierende
   `category_id`, einen `new_category_name`-Vorschlag oder beides leer
   (kein Treffer) zurückgibt.
 - Neuer, JWT-geschützter Endpoint im Transaction-Controller (Konvention wie
   bestehende Endpoints), der `name`, `description`, `type` entgegennimmt und
   das Ergebnis des Services als JSON zurückgibt.
 - Neue Abhängigkeit `ai-sdk-python` in `backend/requirements.txt`; neue
-  Umgebungsvariable `OPENAI_API_KEY`, geladen wie die bestehenden `.env`-Werte
+  Umgebungsvariable `Z_AI_API_KEY`, geladen wie die bestehenden `.env`-Werte
   über `python-dotenv`; Setup-Schritt in `backend/README.md` ergänzen.
 - Kein neuer Weg zum Anlegen von Categories: Bestätigt der Nutzer eine neue
   Category, ruft das Frontend den bestehenden `POST /categories`-Endpoint
