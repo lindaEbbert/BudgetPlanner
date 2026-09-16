@@ -70,6 +70,9 @@ export class TransactionFormComponent {
         const fc = this.fixedCosts().find((f) => f.id === fixedCostId);
         if (fc) {
           this.form.get('amount')?.setValue(fc.amount);
+          if (fc.categoryId) {
+            this.form.get('categoryId')?.setValue(fc.categoryId);
+          }
         }
       }
     });
