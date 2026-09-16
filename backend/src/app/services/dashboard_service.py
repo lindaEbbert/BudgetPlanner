@@ -29,19 +29,19 @@ def get_summary(user_id: str, month: int = None, year: int = None, day: int = No
     if not day:
         day   = today.day
 
-    # Kontostand bis zum gewählten Tag (inkl. Übertrag aus Vormonaten)
+    # Balance up to the chosen day (incl. carryover from previous months)
     bal = transaction_service.calculate_balance(user_id, month, year, day)
 
-    # Noch verfügbare Budget-Summe bis zum gewählten Tag
+    # Total budget still remaining up to the chosen day
     remaining_budgets = budget_service.get_budgets_total_remaining(user_id, month, year, day)
 
-    # Notwendiges Fixkosten-Depot zum gewählten Tag
+    # Required fixed-cost reserve as of the chosen day
     needed_fc_depot = fixed_cost_service.get_needed_fc_depot(user_id, month, year, day)
 
-    # Frei verfügbar = Kontostand minus was noch für Budgets + Fixkosten reserviert ist
+    # Free to use = balance minus what's still reserved for budgets + fixed costs
     free_to_use = bal['balance'] - remaining_budgets - needed_fc_depot
 
-    # Letzte 5 Transaktionen (zeitlich, alle Monate)
+    # Last 5 transactions (chronological, across all months)
     recent = transaction_repository.get_by_user(user_id)[:5]
 
     return {

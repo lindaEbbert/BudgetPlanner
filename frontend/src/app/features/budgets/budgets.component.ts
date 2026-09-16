@@ -51,9 +51,9 @@ export class BudgetsComponent {
   }
 
   getProgressColor(percentage: number): 'primary' | 'accent' | 'warn' {
-    if (percentage >= 90) return 'warn'; // rot: gefährlich
-    if (percentage >= 70) return 'accent'; // gelb: Achtung
-    return 'primary'; // grün: ok
+    if (percentage >= 90) return 'warn'; // red: dangerous
+    if (percentage >= 70) return 'accent'; // yellow: caution
+    return 'primary'; // green: ok
   }
 
   onMonthChange(event: { month: number; year: number }): void {

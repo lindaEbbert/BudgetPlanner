@@ -9,7 +9,7 @@ user_blueprint = Blueprint('user_controller', __name__)
 def create_user():
     if request.method == 'POST':
         data = request.get_json()
-        # validierung
+        # validation
         user = User(name=data['name'], email=data['email'], hashed_password=data['hashed_password'])
         service.add_user(user)
         return jsonify({'message': 'User created!'}), 201  # 201: erfolgreich created

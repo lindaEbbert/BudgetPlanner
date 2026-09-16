@@ -104,5 +104,5 @@ def void_transaction(transaction_id):
 def delete_transaction(transaction_id):
     user_id = get_jwt_identity()
     transaction = transaction_service.get_user_transactions(user_id)
-    # Hinweis: In einer Finanz-App lieber void_transaction verwenden!
+    # Note: prefer void_transaction over deleting in a finance app!
     return jsonify({'message': 'Nicht erlaubt — bitte stornieren statt löschen'}), 405

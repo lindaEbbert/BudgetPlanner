@@ -5,8 +5,8 @@ from src.app.services import fixed_cost_service
 fixed_cost_blueprint = Blueprint('fixed_costs', __name__, url_prefix='/fixed-costs')
 
 
-# WICHTIG: /projections MUSS vor /<id> registriert sein!
-# Sonst würde Flask "projections" als fixed_cost_id interpretieren.
+# IMPORTANT: /projections MUST be registered before /<id>!
+# Otherwise Flask would interpret "projections" as a fixed_cost_id.
 @fixed_cost_blueprint.route('/projections', methods=['GET'])
 @jwt_required()
 def get_projections():

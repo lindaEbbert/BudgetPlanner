@@ -1,5 +1,9 @@
 # BudgetPlanner
 
+## Coding conventions
+
+- Write all code comments in English, regardless of what language the conversation is in.
+
 ## Agent skills
 
 ### Issue tracker

@@ -35,7 +35,7 @@ class FixedCosts(db.Model):
     deleted_at = db.Column(db.DateTime)
 
 
-    def to_dict(self): # QUESTION: Welche Kategorien ergeben hier Sinn?
+    def to_dict(self): # QUESTION: which fields make sense here?
         return {"id": self.id,
                 "category_id": self.category_id,
                 "name": self.name,

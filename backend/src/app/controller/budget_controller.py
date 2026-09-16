@@ -40,7 +40,7 @@ def create_budget():
     if error:
         return jsonify({'error': error}), 409
 
-    # Budget sofort mit spent/remaining zurückgeben
+    # Return the budget immediately with spent/remaining included
     budgets = budget_service.get_user_budgets_with_summary(
         user_id, data['month'], data['year']
     )
