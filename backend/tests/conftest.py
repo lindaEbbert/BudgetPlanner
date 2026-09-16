@@ -1,11 +1,12 @@
 import os
+from types import SimpleNamespace
 
 import pytest
 from sqlalchemy import create_engine, text
 
 from src.app.db import db
 from src.app.main import DB_NAME, build_database_uri, create_app
-from src.app.services import auth_service
+from src.app.services import auth_service, category_suggestion_service
 
 TEST_DB_NAME = os.getenv("TEST_DB_NAME", f"{DB_NAME}_test")
 
@@ -87,3 +88,28 @@ def access_token(user):
 @pytest.fixture
 def auth_headers(access_token):
     return {"Authorization": f"Bearer {access_token}"}
+
+
+@pytest.fixture
+def model_answers(monkeypatch):
+    """Stubs the external LLM call behind category suggestions.
+
+    Call it with the category names the model should answer; it returns the recorded calls.
+    """
+    monkeypatch.setenv("Z_AI_API_KEY", "test-key")
+
+    def answer_with(existing_category_name=None, new_category_name=None):
+        calls = []
+
+        def fake_generate_object(**kwargs):
+            calls.append(kwargs)
+            answer = kwargs["schema"](
+                existing_category_name=existing_category_name,
+                new_category_name=new_category_name,
+            )
+            return SimpleNamespace(object=answer)
+
+        monkeypatch.setattr(category_suggestion_service, "generate_object", fake_generate_object)
+        return calls
+
+    return answer_with

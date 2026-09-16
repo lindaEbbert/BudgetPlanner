@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from src.app.services import transaction_service
+from src.app.models.transactions import TransactionType
+from src.app.services import category_suggestion_service, transaction_service
 
 transaction_blueprint = Blueprint('transactions', __name__, url_prefix='/transactions')
 
@@ -30,6 +31,30 @@ def get_balance():
     day   = request.args.get('day',   type=int)
     balance = transaction_service.calculate_balance(user_id, month, year, day)
     return jsonify(balance), 200
+
+
+@transaction_blueprint.route('/category-suggestion', methods=['POST'])
+@jwt_required()
+def suggest_category():
+    user_id = get_jwt_identity()
+    data = request.get_json()
+
+    for field in ['name', 'type']:
+        if not data.get(field):
+            return jsonify({'error': f'{field} ist erforderlich'}), 400
+    if data['type'] not in TransactionType.__members__:
+        return jsonify({'error': 'type muss INCOME, EXPENSE oder INITIAL sein'}), 400
+
+    suggestion = category_suggestion_service.suggest_category(
+        user_id=user_id,
+        name=data['name'],
+        description=data.get('description'),
+        transaction_type=data['type']
+    )
+    return jsonify({
+        'categoryId': str(suggestion.category_id) if suggestion.category_id else None,
+        'newCategoryName': suggestion.new_category_name
+    }), 200
 
 
 @transaction_blueprint.route('', methods=['GET'])

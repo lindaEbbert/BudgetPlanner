@@ -9,6 +9,7 @@ Flask REST API with JWT authentication, a 3-layer architecture, and PostgreSQL.
 - **Database**: PostgreSQL
 - **ORM**: SQLAlchemy 2.0
 - **Migrations**: Alembic
+- **AI**: `ai-sdk-python` → `glm-4.7-flash` via the z.ai API (category suggestions)
 
 ## Architecture
 
@@ -41,6 +42,7 @@ backend/
 │   ├── services/
 │   │   ├── auth_service.py
 │   │   ├── category_service.py
+│   │   ├── category_suggestion_service.py  # LLM category suggestion (z.ai)
 │   │   ├── transaction_service.py       # balance & carryover calculation
 │   │   ├── budget_service.py            # budget spent/remaining calculation
 │   │   ├── fixed_cost_service.py        # projections & required-reserve calculation
@@ -111,6 +113,7 @@ all ids are UUIDs. JSON bodies use camelCase keys; responses do too.
 | GET | `/transactions` | `?month&year&day&include_voided` (all optional) | List transactions, newest first |
 | GET | `/transactions/balance` | `?month&year&day` (optional) | Computed balance — `{ income, expense, initialBalance, balance }`. With `month`/`year`/`day` the balance is calculated up to that date incl. carryover |
 | POST | `/transactions` | `name`, `amount`, `type`, `transactionDate`, `categoryId`*, `description`?, `fixedCostId`? | Create a transaction. `type`: `INCOME` \| `EXPENSE` \| `INITIAL`. `categoryId` required unless `type` is `INITIAL` |
+| POST | `/transactions/category-suggestion` | `name`, `type` (`INCOME` \| `EXPENSE` \| `INITIAL`), `description`? | Category Suggestion from an LLM — `{ categoryId, newCategoryName }`: an existing category's id, a proposed new category name, or both `null` (no suggestion, also when the LLM call fails). Only `name`, `description`, `type` and the user's category names are sent to z.ai. Writes nothing |
 | PUT | `/transactions/<id>` | any of the create fields | Update a transaction |
 | POST | `/transactions/<id>/void` | — | Mark a transaction as voided (it stops counting; not deleted) |
 | DELETE | `/transactions/<id>` | — | Not allowed — always `405`; use void instead |
@@ -183,7 +186,11 @@ real user creation.
    DB_PORT=5432
    DB_NAME=budget_planner_db
    JWT_SECRET_KEY=your_secret_key
+   Z_AI_API_KEY=your_z_ai_api_key
    ```
+   `Z_AI_API_KEY` comes from the [z.ai API console](https://z.ai/manage-apikey/apikey-list)
+   and is only needed for category suggestions — without it the suggestion
+   endpoint simply returns no suggestion.
 
 4. **Run migrations**
    ```bash
@@ -238,6 +245,7 @@ pytest tests/test_category_service.py # a single file
   | `user` | A registered test user |
   | `access_token` | A valid JWT for `user` |
   | `auth_headers` | `{"Authorization": "Bearer <access_token>"}` for `client` requests |
+  | `model_answers` | Stubs the LLM behind category suggestions — `model_answers(existing_category_name=..., new_category_name=...)` sets the answer and returns the recorded calls; no real API requests |
 
   Every test runs inside an app context, so services can be called directly.
 
