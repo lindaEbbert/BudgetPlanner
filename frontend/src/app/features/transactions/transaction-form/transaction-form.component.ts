@@ -55,23 +55,23 @@ export class TransactionFormComponent {
     this.categoryService.getCategories().subscribe((cats) => this.categories.set(cats));
     this.fixedCostService.getFixedCosts().subscribe((fc) => this.fixedCosts.set(fc));
 
-    this.form.get('type')?.valueChanges.subscribe((type) => {
-      const categoryControl = this.form.get('categoryId');
+    this.form.controls.type.valueChanges.subscribe((type) => {
+      const categoryControl = this.form.controls.categoryId;
       if (type === 'INITIAL') {
-        categoryControl?.clearValidators();
-        categoryControl?.setValue('');
+        categoryControl.clearValidators();
+        categoryControl.setValue('');
       } else {
-        categoryControl?.setValidators(Validators.required);
+        categoryControl.setValidators(Validators.required);
       }
-      categoryControl?.updateValueAndValidity();
+      categoryControl.updateValueAndValidity();
     });
-    this.form.get('fixedCostId')?.valueChanges.subscribe((fixedCostId) => {
+    this.form.controls.fixedCostId.valueChanges.subscribe((fixedCostId) => {
       if (fixedCostId) {
         const fc = this.fixedCosts().find((f) => f.id === fixedCostId);
         if (fc) {
-          this.form.get('amount')?.setValue(fc.amount);
+          this.form.controls.amount.setValue(fc.amount);
           if (fc.categoryId) {
-            this.form.get('categoryId')?.setValue(fc.categoryId);
+            this.form.controls.categoryId.setValue(fc.categoryId);
           }
         }
       }

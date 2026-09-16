@@ -6,7 +6,7 @@
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Bezeichnung</mat-label>
       <input matInput formControlName="name">
-      @if (form.get('name')?.hasError('required')) {
+      @if (form.controls.name.hasError('required')) {
         <mat-error>Bezeichnung erforderlich</mat-error>
       }
     </mat-form-field>
@@ -15,10 +15,10 @@
       <mat-form-field appearance="outline">
         <mat-label>Betrag (€)</mat-label>
         <input matInput formControlName="amount" type="number" step="0.01" min="0">
-        @if (form.get('amount')?.hasError('required')) {
+        @if (form.controls.amount.hasError('required')) {
           <mat-error>Betrag erforderlich</mat-error>
         }
-        @if (form.get('amount')?.hasError('min')) {
+        @if (form.controls.amount.hasError('min')) {
           <mat-error>Muss größer 0 sein</mat-error>
         }
       </mat-form-field>
@@ -30,13 +30,13 @@
           <mat-option value="EXPENSE">Ausgabe</mat-option>
           <mat-option value="INITIAL">Initiales Guthaben</mat-option>
         </mat-select>
-        @if (form.get('type')?.hasError('required')) {
+        @if (form.controls.type.hasError('required')) {
           <mat-error>Typ erforderlich</mat-error>
         }
       </mat-form-field>
     </div>
 
-    @if (form.get('type')?.value !== 'INITIAL') {
+    @if (form.controls.type.value !== 'INITIAL') {
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Kategorie</mat-label>
         <mat-select formControlName="categoryId">
@@ -44,12 +44,12 @@
             <mat-option [value]="cat.id">{{ cat.name }}</mat-option>
           }
         </mat-select>
-        @if (form.get('categoryId')?.hasError('required')) {
+        @if (form.controls.categoryId.hasError('required')) {
           <mat-error>Kategorie erforderlich</mat-error>
         }
       </mat-form-field>
     }
-    @if (form.get('type')?.value !== 'INITIAL') {
+    @if (form.controls.type.value !== 'INITIAL') {
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Fixkosten-Zuordnung (optional)</mat-label>
         <mat-select formControlName="fixedCostId">
