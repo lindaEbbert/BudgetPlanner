@@ -15,7 +15,14 @@ angezeigt, bevor es das bestehende Feld überschreibt.
       Category-Felds ab
 - [ ] Ergebnis wird zur Bestätigung angezeigt statt das Feld direkt zu
       überschreiben (sowohl bei Treffer als auch bei
-      `new_category_name`-Vorschlag)
+      `newCategoryName`-Vorschlag)
 - [ ] Accept übernimmt die vorgeschlagene bzw. neu angelegte Category;
       Reject lässt das Feld unverändert
 - [ ] Verhalten ist im Bearbeiten-Formular identisch zum Anlegen-Formular
+
+## Comments
+
+- 2026-09-17: Response-Keys an die API angeglichen. Der Endpoint
+  `POST /transactions/category-suggestion` liefert `{ categoryId,
+  newCategoryName }` in camelCase, siehe OpenAPI-Schema `CategorySuggestion`
+  in `backend/src/app/openapi/openapi.yaml`.

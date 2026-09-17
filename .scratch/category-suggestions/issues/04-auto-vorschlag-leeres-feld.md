@@ -14,9 +14,9 @@ Bestätigungs-Hinweis mit editierbarem neuen Kategorienamen.
       `categoryId` leer und `fixedCostId` leer sind
 - [ ] Ist `categoryId` bereits belegt oder `fixedCostId` gesetzt, löst das
       Verlassen des Namensfelds keinen Call aus
-- [ ] Liefert der Vorschlag eine existierende `category_id`, wird das
+- [ ] Liefert der Vorschlag eine existierende `categoryId`, wird das
       Category-Feld direkt damit befüllt
-- [ ] Liefert der Vorschlag nur einen `new_category_name`, erscheint ein
+- [ ] Liefert der Vorschlag nur einen `newCategoryName`, erscheint ein
       Hinweis mit editierbarem Namen und Accept/Reject
 - [ ] Accept legt die Category über den bestehenden Categories-Weg an und
       setzt sie als Auswahl
@@ -24,3 +24,10 @@ Bestätigungs-Hinweis mit editierbarem neuen Kategorienamen.
 - [ ] Schlägt der Aufruf fehl (Netzwerk/Timeout/Fehler), bleibt das
       Formular normal nutzbar, ohne Fehlermeldung
 - [ ] Die gesetzte Category bleibt weiterhin manuell änderbar
+
+## Comments
+
+- 2026-09-17: Response-Keys an die API angeglichen. Der Endpoint
+  `POST /transactions/category-suggestion` liefert `{ categoryId,
+  newCategoryName }` in camelCase, siehe OpenAPI-Schema `CategorySuggestion`
+  in `backend/src/app/openapi/openapi.yaml`.

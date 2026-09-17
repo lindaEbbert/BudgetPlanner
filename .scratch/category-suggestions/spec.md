@@ -130,7 +130,7 @@ für die Begründung der Technologie-Entscheidung und den Glossar-Eintrag
   sondern zur Bestätigung angezeigt (z. B. „Vorschlag: 'Lebensmittel' statt
   'Sonstiges' übernehmen?“ mit Accept/Reject), da dabei eine bereits gesetzte
   Category überschrieben würde. Liefert die Suggestion nur einen
-  `new_category_name` (kein Treffer unter bestehenden Categories), gilt
+  `newCategoryName` (kein Treffer unter bestehenden Categories), gilt
   unabhängig vom Auslöser immer der Bestätigungs-Fluss mit editierbarem
   Namen (Accept legt über den bestehenden Categories-Weg an und übernimmt
   die ID; Reject lässt das Feld leer).
@@ -159,7 +159,7 @@ für die Begründung der Technologie-Entscheidung und den Glossar-Eintrag
   Fixed-Cost-Zuordnung) und zeigt das Ergebnis zur Bestätigung an, statt
   direkt zu überschreiben — Accept übernimmt die vorgeschlagene Category,
   Reject verwirft den Vorschlag und lässt das Feld unverändert; Antwort mit
-  nur `new_category_name` zeigt unabhängig vom Auslöser den
+  nur `newCategoryName` zeigt unabhängig vom Auslöser den
   Bestätigungs-Hinweis; Accept legt die Category an und setzt die ID; Reject
   lässt das Feld leer; ein HTTP-Fehler bricht das Formular nicht.
 - Weder Backend noch Frontend haben aktuell automatisierte Tests (nur
@@ -188,3 +188,6 @@ für die Begründung der Technologie-Entscheidung und den Glossar-Eintrag
 - Dieses Feature spannt Backend und Frontend auf, mit einer echten
   Abhängigkeit (Frontend braucht den Backend-Endpoint) — beim Ticket-Split
   über `/to-tickets` sollte das als Blocking Edge abgebildet werden.
+- Der Endpoint antwortet in camelCase mit `{ categoryId, newCategoryName }`
+  (OpenAPI-Schema `CategorySuggestion`). `category_id`/`new_category_name`
+  in den Backend-Abschnitten bezeichnen die Felder des Python-Services.
