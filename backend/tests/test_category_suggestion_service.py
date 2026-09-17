@@ -1,3 +1,8 @@
+import json
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from types import SimpleNamespace
+
 import pytest
 
 from src.app.services import category_service, category_suggestion_service
@@ -101,3 +106,67 @@ def test_sends_transaction_text_and_category_names_but_no_ids_to_the_model(model
         assert expected in sent_text
     for private_id in (user.id, rent.id, groceries.id):
         assert str(private_id) not in sent_text
+
+
+@pytest.fixture
+def fake_z_ai(monkeypatch):
+    """Local stand-in for the z.ai chat completions API that records every request."""
+    state = SimpleNamespace(answer={}, requests=[])
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            state.requests.append({
+                "path": self.path,
+                "authorization": self.headers.get("Authorization"),
+                "body": body,
+            })
+            payload = json.dumps({
+                "id": "chatcmpl-test",
+                "object": "chat.completion",
+                "created": 0,
+                "model": body["model"],
+                "choices": [{
+                    "index": 0,
+                    "finish_reason": "stop",
+                    "message": {"role": "assistant", "content": json.dumps(state.answer)},
+                }],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+            }).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def log_message(self, *args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True).start()
+    monkeypatch.setenv("Z_AI_API_KEY", "test-key")
+    monkeypatch.setattr(
+        category_suggestion_service, "Z_AI_BASE_URL", f"http://127.0.0.1:{server.server_port}/api/paas/v4/"
+    )
+    # If the client swap in _build_model ever stops working, fail locally instead of calling the real OpenAI API.
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://127.0.0.1:9/")
+
+    yield state
+
+    server.shutdown()
+    server.server_close()
+
+
+def test_suggestion_request_reaches_the_z_ai_endpoint_with_key_model_and_thinking_disabled(fake_z_ai, user):
+    groceries, _ = category_service.create_category(user.id, "Lebensmittel")
+    fake_z_ai.answer = {"existing_category_name": "Lebensmittel", "new_category_name": None}
+
+    suggestion = category_suggestion_service.suggest_category(user.id, "Rewe", "Wocheneinkauf", "EXPENSE")
+
+    assert suggestion == CategorySuggestion(category_id=groceries.id)
+    assert fake_z_ai.requests
+    for request in fake_z_ai.requests:
+        assert request["path"] == "/api/paas/v4/chat/completions"
+        assert request["authorization"] == "Bearer test-key"
+        assert request["body"]["model"] == "glm-4.7-flash"
+        assert request["body"]["thinking"] == {"type": "disabled"}
