@@ -38,6 +38,7 @@ backend/
 │   │   ├── budget_controller.py         # /budgets routes
 │   │   ├── fixed_cost_controller.py     # /fixed-costs routes
 │   │   ├── dashboard_controller.py      # /dashboard routes
+│   │   ├── docs_controller.py           # /openapi.json and /docs (Swagger UI)
 │   │   └── user_controller.py           # /user routes (legacy, unauthenticated)
 │   ├── services/
 │   │   ├── auth_service.py
@@ -61,6 +62,9 @@ backend/
 │   │   ├── transactions.py
 │   │   ├── budgets.py
 │   │   └── fixed_costs.py
+│   ├── openapi/
+│   │   ├── openapi.yaml                 # OpenAPI 3.1 spec of the API
+│   │   └── swagger_ui.html              # Swagger UI page served at /docs
 │   ├── db.py                            # SQLAlchemy instance
 │   └── main.py                          # App factory & blueprint registration
 ├── alembic/                             # Migration files
@@ -161,8 +165,31 @@ real user creation.
 | Method | Path | Description |
 |---|---|---|
 | GET | `/` | Health check — returns `Hello World!` |
+| GET | `/openapi.json` | OpenAPI document (no token required) |
+| GET | `/docs` | Swagger UI (no token required) |
 
 \* `categoryId` is required for `INCOME` / `EXPENSE`, omitted for `INITIAL`.
+
+## API Documentation (OpenAPI / Swagger UI)
+
+With the server running:
+
+- **Swagger UI:** `http://localhost:5000/docs` — browse and try out every endpoint.
+  For protected routes, call `POST /auth/login` and paste the `access_token`
+  into **Authorize**.
+- **OpenAPI document:** `http://localhost:5000/openapi.json` (OpenAPI 3.1)
+
+The spec is written by hand in `src/app/openapi/openapi.yaml` and served by
+`docs_controller.py`; no Flask-specific Swagger library is used. It documents
+the implemented behavior, including known cases that fail with 500.
+`GET /fixed-costs/<selected_month><selected_year>` is an unimplemented stub
+and intentionally left out.
+
+**Keep it in sync:** when you change a route, its validation, or a response
+dict (`*_to_dict`), update `openapi.yaml` in the same change.
+
+Swagger UI is loaded from jsDelivr (pinned version with integrity hashes), so
+`/docs` needs internet access in the browser.
 
 ## Setup
 

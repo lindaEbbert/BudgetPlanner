@@ -13,6 +13,7 @@ from src.app.controller.transaction_controller import transaction_blueprint
 from src.app.controller.dashboard_controller import dashboard_blueprint
 from src.app.controller.budget_controller import budget_blueprint
 from src.app.controller.fixed_cost_controller import fixed_cost_blueprint
+from src.app.controller.docs_controller import docs_blueprint
 from src.app.models import *
 
 load_dotenv()
@@ -51,6 +52,7 @@ def create_app(config_overrides=None):
     app.register_blueprint(dashboard_blueprint)
     app.register_blueprint(budget_blueprint)
     app.register_blueprint(fixed_cost_blueprint)
+    app.register_blueprint(docs_blueprint)
 
     @app.route('/')
     def hello_world():

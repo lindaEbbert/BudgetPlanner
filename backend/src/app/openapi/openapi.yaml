@@ -1,0 +1,1561 @@
+# OpenAPI description of the BudgetPlanner backend.
+# Served as JSON at GET /openapi.json and rendered by Swagger UI at GET /docs.
+# Keep this file in sync with the controllers and their *_to_dict response builders.
+
+openapi: 3.1.0
+
+info:
+  title: BudgetPlanner API
+  version: 1.0.0
+  description: |
+    REST API of the BudgetPlanner backend.
+
+    **Authentication:** call `POST /auth/login` and send the returned `access_token` as
+    `Authorization: Bearer <token>` (in Swagger UI: **Authorize**). Tokens are valid for 7 days.
+
+    **Conventions**
+    - JSON keys are camelCase, IDs are UUIDs, amounts are JSON numbers.
+    - Timestamps (`createdAt`, `updatedAt`) have no timezone offset.
+    - Error messages are German. Handlers answer with `{"error": ...}`, token errors from
+      Flask-JWT-Extended with `{"msg": ...}`, and some responses use `{"message": ...}`.
+    - Request bodies must be sent as `application/json`; otherwise Flask answers with an
+      HTML 415 page (malformed JSON: HTML 400 page).
+    - Input is only partly validated. Path IDs that are not UUIDs fail with an HTML 500 page;
+      other requests known to fail with 500 are listed in each operation's description.
+
+tags:
+  - name: Auth
+    description: Registration and login. No token required.
+  - name: Categories
+    description: The user's category labels.
+  - name: Transactions
+    description: Income, expenses and initial balances.
+  - name: Budgets
+    description: Monthly spending limits per category.
+  - name: Fixed Costs
+    description: Recurring costs.
+  - name: Dashboard
+    description: Aggregated monthly overview.
+  - name: Users (legacy)
+    description: >-
+      Predates `/auth`, requires no token, and fails in almost every case (see each
+      operation). Use `/auth` instead.
+  - name: Health
+
+security:
+  - bearerAuth: []
+
+paths:
+  /:
+    get:
+      tags: [Health]
+      operationId: helloWorld
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: The app is running.
+          content:
+            text/html:
+              schema:
+                type: string
+              example: Hello World!
+
+  # ---------------------------------------------------------------- Auth
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      operationId: register
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: linda@example.com
+              name: Linda
+              password: geheim123
+      responses:
+        '201':
+          description: User created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          description: '`email`, `name` or `password` is missing or empty.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Alle Felder erforderlich
+        '409':
+          description: The email address is already registered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: E-Mail bereits vergeben
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Log in and get an access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: linda@example.com
+              password: geheim123
+      responses:
+        '200':
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: '`email` or `password` is missing or empty.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: E-Mail und Passwort erforderlich
+        '401':
+          description: Unknown email address or wrong password.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Ungültige Anmeldedaten
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+
+  # ---------------------------------------------------------------- Categories
+
+  /categories:
+    get:
+      tags: [Categories]
+      operationId: getCategories
+      summary: List the user's categories
+      description: Deleted categories are left out.
+      responses:
+        '200':
+          description: The user's categories.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+    post:
+      tags: [Categories]
+      operationId: createCategory
+      summary: Create a category
+      description: >-
+        The name must be unique among the user's categories that are not deleted. A name
+        still used by a deleted category fails with 500, because the database constraint
+        also covers deleted categories.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreate'
+            example:
+              name: Lebensmittel
+      responses:
+        '201':
+          description: Category created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: '`name` is missing or empty.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Name erforderlich
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: The user already has a category with this name.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Kategorie mit diesem Namen existiert bereits
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  /categories/{category_id}:
+    parameters:
+      - $ref: '#/components/parameters/CategoryId'
+    put:
+      tags: [Categories]
+      operationId: updateCategory
+      summary: Rename a category
+      description: >-
+        A missing, empty or unchanged `name` leaves the category as it is. A name still
+        used by a deleted category fails with 500.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdate'
+            example:
+              name: Wohnen
+      responses:
+        '200':
+          description: The updated category.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: >-
+            The category does not exist or belongs to another user, or the new name is
+            already taken (also answered with 404).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    error: Kategorie nicht gefunden
+                otherUser:
+                  value:
+                    error: Keine Berechtigung
+                nameTaken:
+                  value:
+                    error: Name bereits vergeben
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+    delete:
+      tags: [Categories]
+      operationId: deleteCategory
+      summary: Delete a category
+      description: Soft delete. The category no longer appears in `GET /categories`.
+      responses:
+        '200':
+          description: Category deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              example:
+                message: Kategorie gelöscht
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/CategoryNotFound'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  # ---------------------------------------------------------------- Transactions
+
+  /transactions:
+    get:
+      tags: [Transactions]
+      operationId: getTransactions
+      summary: List the user's transactions
+      description: |
+        Newest first by `transactionDate`. Voided transactions are left out unless
+        `include_voided=true`.
+
+        The date filter only applies when both `month` and `year` are given: from the first
+        of that month up to `day`, or to the end of the month without `day`. Non-integer
+        values are ignored. An impossible date (e.g. `month=13`) fails with 500.
+      parameters:
+        - $ref: '#/components/parameters/Month'
+        - $ref: '#/components/parameters/Year'
+        - $ref: '#/components/parameters/Day'
+        - $ref: '#/components/parameters/IncludeVoided'
+      responses:
+        '200':
+          description: The matching transactions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+    post:
+      tags: [Transactions]
+      operationId: createTransaction
+      summary: Create a transaction
+      description: |
+        Required fields are checked for truthiness, so `0` and `""` count as missing (400).
+        `categoryId` is required unless `type` is `INITIAL`.
+
+        Not validated, fails with 500: an unknown `type`, a `transactionDate` that is not
+        ISO 8601, or a `categoryId` that does not exist.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionCreate'
+            example:
+              name: Rewe
+              amount: 42.5
+              type: EXPENSE
+              transactionDate: '2026-09-16'
+              categoryId: 6a039a0a-44c0-4d29-910f-dc08ee75aae7
+              description: Wocheneinkauf
+      responses:
+        '201':
+          description: Transaction created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          description: A required field is missing or empty.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: categoryId ist erforderlich
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  /transactions/balance:
+    get:
+      tags: [Transactions]
+      operationId: getBalance
+      summary: Get the user's balance
+      description: |
+        Only non-voided transactions count. `initialBalance` is always the sum of all
+        `INITIAL` transactions, regardless of the date.
+
+        - Unless `month`, `year` **and** `day` are all given: totals over all time, with
+          `balance = initialBalance + income - expense`.
+        - With all three: `income` and `expense` cover the first of the month up to `day`,
+          and `balance` also includes the carryover of all income and expenses before that
+          month.
+
+        An impossible date fails with 500.
+      parameters:
+        - $ref: '#/components/parameters/Month'
+        - $ref: '#/components/parameters/Year'
+        - $ref: '#/components/parameters/Day'
+      responses:
+        '200':
+          description: The computed balance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  /transactions/category-suggestion:
+    post:
+      tags: [Transactions]
+      operationId: suggestCategory
+      summary: Suggest a category for a transaction
+      description: >-
+        Asks an LLM (z.ai) for a category. Only `name`, `description`, `type` and the names of
+        the user's categories are sent. Writes nothing. The answer is an existing category's
+        ID, a proposed new category name, or both `null` when there is no suggestion (also
+        when the LLM call fails or `Z_AI_API_KEY` is not set).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategorySuggestionRequest'
+            example:
+              name: Rewe
+              description: Wocheneinkauf
+              type: EXPENSE
+      responses:
+        '200':
+          description: The suggestion.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategorySuggestion'
+        '400':
+          description: '`name` or `type` is missing or empty, or `type` is unknown.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                missingField:
+                  value:
+                    error: name ist erforderlich
+                unknownType:
+                  value:
+                    error: type muss INCOME, EXPENSE oder INITIAL sein
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  /transactions/{transaction_id}:
+    parameters:
+      - $ref: '#/components/parameters/TransactionId'
+    put:
+      tags: [Transactions]
+      operationId: updateTransaction
+      summary: Update a transaction
+      description: >-
+        Changes only the fields present in the body; other keys are ignored. The same invalid
+        values as on create (unknown `type`, non-ISO `transactionDate`, unknown `categoryId`)
+        fail with 500.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionUpdate'
+            example:
+              amount: 40
+              transactionDate: '2026-09-15'
+      responses:
+        '200':
+          description: The updated transaction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/TransactionNotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+    delete:
+      tags: [Transactions]
+      operationId: deleteTransaction
+      summary: Delete a transaction (not allowed)
+      description: >-
+        Transactions cannot be deleted. After the token check this always answers 405; use
+        `POST /transactions/{transaction_id}/void` instead.
+      responses:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '405':
+          description: Deleting is not allowed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              example:
+                message: Nicht erlaubt — bitte stornieren statt löschen
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  /transactions/{transaction_id}/void:
+    parameters:
+      - $ref: '#/components/parameters/TransactionId'
+    post:
+      tags: [Transactions]
+      operationId: voidTransaction
+      summary: Void a transaction
+      description: >-
+        Sets `isVoided` to true. The transaction is kept but no longer counts toward
+        balances, budgets or the dashboard.
+      responses:
+        '200':
+          description: The voided transaction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/TransactionNotFound'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  # ---------------------------------------------------------------- Budgets
+
+  /budgets:
+    get:
+      tags: [Budgets]
+      operationId: getBudgets
+      summary: List the budgets of a month
+      description: Budgets of the given month with their spending. A `month` above 12 fails with 500.
+      parameters:
+        - $ref: '#/components/parameters/RequiredMonth'
+        - $ref: '#/components/parameters/RequiredYear'
+      responses:
+        '200':
+          description: The budgets of the month.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BudgetSummary'
+        '400':
+          $ref: '#/components/responses/MonthAndYearRequired'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+    post:
+      tags: [Budgets]
+      operationId: createBudget
+      summary: Create a budget
+      description: >-
+        Returns the new budget with its computed spending (as in `GET /budgets`). Fields are
+        only checked for presence (`null` counts as missing), so `0` is accepted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetCreate'
+            example:
+              categoryId: 6a039a0a-44c0-4d29-910f-dc08ee75aae7
+              month: 9
+              year: 2026
+              limitAmount: 300
+      responses:
+        '201':
+          description: Budget created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BudgetSummary'
+        '400':
+          description: A required field is missing or `null`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: limitAmount ist erforderlich
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: >-
+            A budget for this category, month and year already exists. Any other failure while
+            creating the budget (e.g. a `categoryId` that does not exist or a `month` outside
+            1–12) is also answered with 409, with the raw exception text as `error`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                duplicate:
+                  value:
+                    error: Budget für diese Kategorie/Monat existiert bereits
+                monthOutOfRange:
+                  value:
+                    error: '13'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  /budgets/{budget_id}:
+    parameters:
+      - $ref: '#/components/parameters/BudgetId'
+    delete:
+      tags: [Budgets]
+      operationId: deleteBudget
+      summary: Delete a budget
+      responses:
+        '200':
+          description: Budget deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              example:
+                message: Budget gelöscht
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: The budget does not exist or belongs to another user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value:
+                    error: Budget nicht gefunden
+                otherUser:
+                  value:
+                    error: Keine Berechtigung
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  # ---------------------------------------------------------------- Fixed Costs
+  # GET /fixed-costs/<selected_month><selected_year> is an unimplemented stub (always 500)
+  # and intentionally not documented.
+
+  /fixed-costs:
+    get:
+      tags: [Fixed Costs]
+      operationId: getFixedCosts
+      summary: List the user's fixed costs
+      description: Active fixed costs only; deleted ones are left out.
+      responses:
+        '200':
+          description: The user's fixed costs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FixedCost'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+    post:
+      tags: [Fixed Costs]
+      operationId: createFixedCost
+      summary: Create a fixed cost
+      description: |
+        Required fields are checked for truthiness, so `0` and `""` count as missing (400).
+
+        Not validated, fails with 500: an unknown `intervalUnit`, a negative `intervalValue`,
+        a `startDate` that is not ISO 8601, or a `categoryId` that does not exist.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FixedCostCreate'
+            example:
+              name: Miete
+              amount: 900
+              intervalUnit: MONTH
+              intervalValue: 1
+              startDate: '2026-01-01'
+              categoryId: 27a3b7bc-2612-49b8-8aad-3f27950e9985
+      responses:
+        '201':
+          description: Fixed cost created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixedCost'
+        '400':
+          description: A required field is missing or empty.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: amount ist erforderlich
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  /fixed-costs/projections:
+    get:
+      tags: [Fixed Costs]
+      operationId: getProjections
+      summary: Project fixed costs for a month
+      description: >-
+        Fixed costs expected in the given month. `MONTH` and `YEAR` intervals are computed
+        from `startDate`. `DAY` and `WEEK` fixed costs are simplified: they appear once in
+        every month from their start month on. `projectedAmount` always equals `amount`, and
+        `total` is the sum of all `projectedAmount` values.
+      parameters:
+        - $ref: '#/components/parameters/RequiredMonth'
+        - $ref: '#/components/parameters/RequiredYear'
+      responses:
+        '200':
+          description: The projected fixed costs.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixedCostProjections'
+        '400':
+          $ref: '#/components/responses/MonthAndYearRequired'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  /fixed-costs/{fixed_cost_id}:
+    parameters:
+      - $ref: '#/components/parameters/FixedCostId'
+    put:
+      tags: [Fixed Costs]
+      operationId: updateFixedCost
+      summary: Update a fixed cost
+      description: >-
+        Changes only `name`, `amount`, `description`, `intervalUnit` and `intervalValue` when
+        present; `startDate`, `categoryId` and other keys are ignored. An unknown
+        `intervalUnit` fails with 500.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FixedCostUpdate'
+            example:
+              amount: 950
+      responses:
+        '200':
+          description: The updated fixed cost.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FixedCost'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/FixedCostNotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+    delete:
+      tags: [Fixed Costs]
+      operationId: deleteFixedCost
+      summary: Delete a fixed cost
+      description: Soft delete. Sets `isActive` to false; the fixed cost no longer appears in the lists.
+      responses:
+        '200':
+          description: Fixed cost deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              example:
+                message: Fixkosten gelöscht
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/FixedCostNotFound'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  # ---------------------------------------------------------------- Dashboard
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      operationId: getDashboard
+      summary: Get the monthly overview
+      description: |
+        `month`, `year` and `day` each default to today's value.
+
+        - `balance`: as in `GET /transactions/balance` with this date.
+        - `remainingBudgets`: sum over the month's budgets of `limit - spent`, with spending
+          from the first of the month up to `day`; each budget counts at least 0.
+        - `projectedFixedCosts`: money to reserve for active fixed costs as of this date.
+          Fixed costs with a transaction linked to them this month count as 0.
+        - `freeToUse`: `balance - remainingBudgets - projectedFixedCosts`, rounded to 2 decimals.
+        - `recentTransactions`: the user's 5 latest non-voided transactions by
+          `transactionDate`, not limited to the chosen date.
+
+        An impossible date fails with 500.
+      parameters:
+        - $ref: '#/components/parameters/Month'
+        - $ref: '#/components/parameters/Year'
+        - $ref: '#/components/parameters/Day'
+      responses:
+        '200':
+          description: The overview.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  # ---------------------------------------------------------------- Users (legacy)
+
+  /user:
+    get:
+      tags: [Users (legacy)]
+      operationId: getUser
+      summary: Get one user
+      deprecated: true
+      security: []
+      description: >-
+        Never returns a user: for an existing user the handler calls `User.to_dict()`, which
+        does not exist, and fails with 500. An `id` that is not a UUID also fails with 500.
+      parameters:
+        - name: id
+          in: query
+          required: false
+          description: User ID.
+          schema:
+            type: string
+      responses:
+        '404':
+          description: No user with this ID, or `id` is missing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+              example:
+                message: User not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Users (legacy)]
+      operationId: createUser
+      summary: Create a user
+      deprecated: true
+      security: []
+      description: >-
+        Always fails with 500: no `id` is generated for the new user (NOT NULL violation),
+        and a missing field raises a `KeyError`. Use `POST /auth/register` instead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LegacyUserCreate'
+      responses:
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users:
+    get:
+      tags: [Users (legacy)]
+      operationId: getAllUsers
+      summary: List all users
+      deprecated: true
+      security: []
+      description: >-
+        Returns `[]` while no users exist. As soon as one user exists it fails with 500
+        (`User.to_dict()` does not exist).
+      responses:
+        '200':
+          description: There are no users.
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 0
+              example: []
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /user/{user_id}:
+    parameters:
+      - $ref: '#/components/parameters/LegacyUserId'
+    put:
+      tags: [Users (legacy)]
+      operationId: updateUser
+      summary: Update a user
+      deprecated: true
+      security: []
+      description: >-
+        Always fails with 500 once the body is JSON: the integer ID cannot be compared with
+        the UUID primary key.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Attributes to set on the user.
+      responses:
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Users (legacy)]
+      operationId: deleteUser
+      summary: Delete a user
+      deprecated: true
+      security: []
+      description: 'Always fails with 500: the integer ID cannot be compared with the UUID primary key.'
+      responses:
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token from `POST /auth/login`, valid for 7 days.
+
+  parameters:
+    CategoryId:
+      name: category_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    TransactionId:
+      name: transaction_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BudgetId:
+      name: budget_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    FixedCostId:
+      name: fixed_cost_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LegacyUserId:
+      name: user_id
+      in: path
+      required: true
+      description: Integer ID. User IDs are UUIDs, so no value can match a user.
+      schema:
+        type: integer
+    Month:
+      name: month
+      in: query
+      required: false
+      description: Month (1–12).
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 12
+    Year:
+      name: year
+      in: query
+      required: false
+      schema:
+        type: integer
+    Day:
+      name: day
+      in: query
+      required: false
+      description: Day of the month.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 31
+    RequiredMonth:
+      name: month
+      in: query
+      required: true
+      description: Month (1–12).
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 12
+    RequiredYear:
+      name: year
+      in: query
+      required: true
+      schema:
+        type: integer
+    IncludeVoided:
+      name: include_voided
+      in: query
+      required: false
+      description: Only the value `true` (case-insensitive) includes voided transactions.
+      schema:
+        type: boolean
+        default: false
+
+  responses:
+    Unauthorized:
+      description: No token, no `Bearer` prefix, or an expired token (Flask-JWT-Extended).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/JwtError'
+          examples:
+            missingHeader:
+              value:
+                msg: Missing Authorization Header
+            expired:
+              value:
+                msg: Token has expired
+    InvalidToken:
+      description: Malformed token or invalid signature (Flask-JWT-Extended).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/JwtError'
+          examples:
+            malformed:
+              value:
+                msg: Not enough segments
+            invalidSignature:
+              value:
+                msg: Signature verification failed
+    UnsupportedMediaType:
+      description: The request body was not sent as `application/json` (Flask's HTML error page).
+      content:
+        text/html:
+          schema:
+            type: string
+    InternalServerError:
+      description: Unhandled exception (Flask's HTML error page).
+      content:
+        text/html:
+          schema:
+            type: string
+    MonthAndYearRequired:
+      description: '`month` or `year` is missing, `0`, or not an integer.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: month und year sind erforderlich
+    CategoryNotFound:
+      description: The category does not exist or belongs to another user.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            notFound:
+              value:
+                error: Kategorie nicht gefunden
+            otherUser:
+              value:
+                error: Keine Berechtigung
+    TransactionNotFound:
+      description: The transaction does not exist or belongs to another user.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            notFound:
+              value:
+                error: Transaktion nicht gefunden
+            otherUser:
+              value:
+                error: Keine Berechtigung
+    FixedCostNotFound:
+      description: The fixed cost does not exist or belongs to another user.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            notFound:
+              value:
+                error: Fixkosten nicht gefunden
+            otherUser:
+              value:
+                error: Keine Berechtigung
+
+  schemas:
+    # ------------------------------------------------------------ Shared
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    Message:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+    JwtError:
+      type: object
+      required: [msg]
+      properties:
+        msg:
+          type: string
+    NaiveTimestamp:
+      type: [string, 'null']
+      description: ISO 8601 timestamp without timezone offset.
+      examples: ['2026-09-16T18:46:09.911567']
+    Amount:
+      type: number
+      description: Decimal with up to 12 digits and 2 decimal places.
+      examples: [42.5]
+    TransactionType:
+      type: string
+      description: '`INITIAL` is a starting balance.'
+      enum: [INCOME, EXPENSE, INITIAL]
+    IntervalUnit:
+      type: string
+      enum: [DAY, WEEK, MONTH, YEAR]
+    BudgetMonth:
+      type: string
+      enum: [JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE, JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER]
+
+    # ------------------------------------------------------------ Auth
+
+    RegisterRequest:
+      type: object
+      required: [email, name, password]
+      properties:
+        email:
+          type: string
+          minLength: 1
+          maxLength: 120
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        password:
+          type: string
+          minLength: 1
+    RegisterResponse:
+      type: object
+      required: [message, id]
+      properties:
+        message:
+          type: string
+          examples: [Benutzer erstellt]
+        id:
+          type: string
+          format: uuid
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+    LoginResponse:
+      type: object
+      required: [access_token]
+      properties:
+        access_token:
+          type: string
+          description: JWT for the `Authorization` header, valid for 7 days.
+
+    # ------------------------------------------------------------ Categories
+
+    Category:
+      type: object
+      required: [id, name, userId, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          examples: [Lebensmittel]
+        userId:
+          type: string
+          format: uuid
+        createdAt:
+          $ref: '#/components/schemas/NaiveTimestamp'
+    CategoryCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+    CategoryUpdate:
+      type: object
+      properties:
+        name:
+          type: [string, 'null']
+          maxLength: 100
+          description: New name. Missing, empty or unchanged leaves the name as it is.
+
+    # ------------------------------------------------------------ Transactions
+
+    Transaction:
+      type: object
+      required: [id, userId, categoryId, fixedCostId, name, amount, type, transactionDate, description, isVoided, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        categoryId:
+          type: [string, 'null']
+          format: uuid
+        fixedCostId:
+          type: [string, 'null']
+          format: uuid
+        name:
+          type: string
+          examples: [Rewe]
+        amount:
+          $ref: '#/components/schemas/Amount'
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        transactionDate:
+          type: string
+          format: date
+        description:
+          type: [string, 'null']
+        isVoided:
+          type: boolean
+        createdAt:
+          $ref: '#/components/schemas/NaiveTimestamp'
+    TransactionCreate:
+      type: object
+      required: [name, amount, type, transactionDate]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        amount:
+          $ref: '#/components/schemas/Amount'
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        transactionDate:
+          type: string
+          format: date
+          description: A date-time string is also accepted; only its date is stored.
+        categoryId:
+          type: [string, 'null']
+          format: uuid
+          description: Required unless `type` is `INITIAL`.
+        description:
+          type: [string, 'null']
+          maxLength: 120
+        fixedCostId:
+          type: [string, 'null']
+          format: uuid
+          description: The fixed cost this transaction pays.
+      if:
+        properties:
+          type:
+            const: INITIAL
+      else:
+        required: [categoryId]
+        properties:
+          categoryId:
+            type: string
+    TransactionUpdate:
+      type: object
+      description: Only the fields present are changed.
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        amount:
+          $ref: '#/components/schemas/Amount'
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        transactionDate:
+          type: string
+          format: date
+        categoryId:
+          type: [string, 'null']
+          format: uuid
+        fixedCostId:
+          type: [string, 'null']
+          format: uuid
+        description:
+          type: [string, 'null']
+          maxLength: 120
+    Balance:
+      type: object
+      required: [income, expense, initialBalance, balance]
+      properties:
+        income:
+          type: number
+        expense:
+          type: number
+        initialBalance:
+          type: number
+        balance:
+          type: number
+    CategorySuggestionRequest:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: [string, 'null']
+        type:
+          $ref: '#/components/schemas/TransactionType'
+    CategorySuggestion:
+      type: object
+      description: At most one field is set. Both `null` means no suggestion.
+      required: [categoryId, newCategoryName]
+      properties:
+        categoryId:
+          type: [string, 'null']
+          format: uuid
+          description: ID of a fitting existing category.
+        newCategoryName:
+          type: [string, 'null']
+          description: Proposed name for a new category.
+
+    # ------------------------------------------------------------ Budgets
+
+    BudgetSummary:
+      type: object
+      required: [id, userId, categoryId, month, year, limitAmount, spent, remaining, percentage, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        month:
+          $ref: '#/components/schemas/BudgetMonth'
+          description: Month name, although requests use 1–12.
+        year:
+          type: integer
+          examples: [2026]
+        limitAmount:
+          $ref: '#/components/schemas/Amount'
+        spent:
+          type: number
+          description: Sum of non-voided `EXPENSE` transactions in this category during the whole month.
+        remaining:
+          type: number
+          description: '`limitAmount - spent`; negative when over budget.'
+        percentage:
+          type: number
+          description: '`spent / limitAmount * 100`, rounded to one decimal; 0 when `limitAmount` is 0.'
+        createdAt:
+          $ref: '#/components/schemas/NaiveTimestamp'
+        updatedAt:
+          $ref: '#/components/schemas/NaiveTimestamp'
+    BudgetCreate:
+      type: object
+      required: [categoryId, month, year, limitAmount]
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        year:
+          type: integer
+        limitAmount:
+          $ref: '#/components/schemas/Amount'
+
+    # ------------------------------------------------------------ Fixed Costs
+
+    FixedCost:
+      type: object
+      required: [id, userId, categoryId, name, description, amount, intervalUnit, intervalValue, startDate, nextDueDate, isActive]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        categoryId:
+          type: [string, 'null']
+          format: uuid
+        name:
+          type: string
+          examples: [Miete]
+        description:
+          type: [string, 'null']
+        amount:
+          $ref: '#/components/schemas/Amount'
+        intervalUnit:
+          $ref: '#/components/schemas/IntervalUnit'
+        intervalValue:
+          type: integer
+          minimum: 1
+          description: The cost is due every `intervalValue` `intervalUnit`s.
+        startDate:
+          type: string
+          format: date
+        nextDueDate:
+          type: [string, 'null']
+          format: date
+          description: Not set by any endpoint.
+        isActive:
+          type: boolean
+    FixedCostCreate:
+      type: object
+      required: [name, amount, intervalUnit, intervalValue, startDate]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        amount:
+          $ref: '#/components/schemas/Amount'
+        intervalUnit:
+          $ref: '#/components/schemas/IntervalUnit'
+        intervalValue:
+          type: integer
+          minimum: 1
+        startDate:
+          type: string
+          format: date
+        categoryId:
+          type: [string, 'null']
+          format: uuid
+        description:
+          type: [string, 'null']
+          maxLength: 120
+    FixedCostUpdate:
+      type: object
+      description: Only the fields present are changed.
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        amount:
+          $ref: '#/components/schemas/Amount'
+        description:
+          type: [string, 'null']
+          maxLength: 120
+        intervalUnit:
+          $ref: '#/components/schemas/IntervalUnit'
+        intervalValue:
+          type: integer
+          minimum: 1
+    FixedCostProjection:
+      allOf:
+        - $ref: '#/components/schemas/FixedCost'
+        - type: object
+          required: [projectedAmount]
+          properties:
+            projectedAmount:
+              $ref: '#/components/schemas/Amount'
+    FixedCostProjections:
+      type: object
+      required: [projections, total]
+      properties:
+        projections:
+          type: array
+          items:
+            $ref: '#/components/schemas/FixedCostProjection'
+        total:
+          type: number
+
+    # ------------------------------------------------------------ Dashboard
+
+    Dashboard:
+      type: object
+      required: [month, year, balance, remainingBudgets, projectedFixedCosts, freeToUse, recentTransactions]
+      properties:
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        year:
+          type: integer
+        balance:
+          type: number
+        remainingBudgets:
+          type: number
+        projectedFixedCosts:
+          type: number
+        freeToUse:
+          type: number
+        recentTransactions:
+          type: array
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/RecentTransaction'
+    RecentTransaction:
+      type: object
+      required: [id, name, amount, type, transactionDate, isVoided]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        amount:
+          $ref: '#/components/schemas/Amount'
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        transactionDate:
+          type: string
+          format: date
+        isVoided:
+          type: boolean
+
+    # ------------------------------------------------------------ Users (legacy)
+
+    LegacyUserCreate:
+      type: object
+      required: [name, email, hashed_password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        hashed_password:
+          type: string
