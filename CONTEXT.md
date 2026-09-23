@@ -53,8 +53,9 @@ _Avoid_: tag, group, category type
 
 **Category Suggestion**:
 A non-binding proposal for a transaction's category, derived from a transaction's
-name, description and type. Only ever pre-fills the category field or offers to
-create a new category — a transaction's category is set by the user, never by
+name, description and type. It either pre-fills an empty category field, or asks
+the user to confirm — before replacing a category they already set, and before
+creating a new category. A transaction's category is set by the user, never by
 the suggestion alone.
 _Avoid_: auto-categorization, automatic assignment
 
