@@ -5,7 +5,7 @@
 
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Bezeichnung</mat-label>
-      <input matInput formControlName="name">
+      <input matInput formControlName="name" (blur)="suggestCategoryIfOpen()">
       @if (form.controls.name.hasError('required')) {
         <mat-error>Bezeichnung erforderlich</mat-error>
       }
@@ -39,7 +39,7 @@
     @if (form.controls.type.value !== 'INITIAL') {
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Kategorie</mat-label>
-        <mat-select formControlName="categoryId">
+        <mat-select formControlName="categoryId" #categorySelect>
           @for (cat of categories(); track cat.id) {
             <mat-option [value]="cat.id">{{ cat.name }}</mat-option>
           }
@@ -48,6 +48,37 @@
           <mat-error>Kategorie erforderlich</mat-error>
         }
       </mat-form-field>
+      @if (newCategoryOffer() !== 'none') {
+        <div>
+          <p role="status">Keine passende Kategorie gefunden. Neue Kategorie anlegen?</p>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Neue Kategorie</mat-label>
+            <input matInput [formControl]="newCategoryName">
+            @if (newCategoryName.hasError('required')) {
+              <mat-error>Name erforderlich</mat-error>
+            }
+          </mat-form-field>
+          @if (newCategoryOffer() === 'failed') {
+            <p role="alert">Kategorie konnte nicht angelegt werden.</p>
+          }
+          <button
+            mat-button
+            type="button"
+            [disabled]="newCategoryOffer() === 'creating'"
+            (click)="rejectNewCategory()"
+          >
+            Verwerfen
+          </button>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="newCategoryOffer() === 'creating' || newCategoryName.invalid"
+            (click)="acceptNewCategory()"
+          >
+            Kategorie anlegen
+          </button>
+        </div>
+      }
     }
     @if (form.controls.type.value !== 'INITIAL') {
       <mat-form-field appearance="outline" class="full-width">
