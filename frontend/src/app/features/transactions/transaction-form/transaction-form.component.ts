@@ -12,7 +12,13 @@ import { CategoryService } from '../../categories/category.service';
 import { FixedCostService} from '../../fixed-costs/fixed-cost.service';
 import { CategorySuggestionService } from '../category-suggestion.service';
 import { FixedCost } from '../../../shared/models';
-import { Transaction, Category, CreateTransactionDto, TransactionType } from '../../../shared/models';
+import {
+  Transaction,
+  Category,
+  CategorySuggestion,
+  CreateTransactionDto,
+  TransactionType,
+} from '../../../shared/models';
 
 @Component({
   selector: 'app-transaction-form',
@@ -26,6 +32,9 @@ import { Transaction, Category, CreateTransactionDto, TransactionType } from '..
     MatDatepickerModule,
   ],
   templateUrl: './transaction-form.component.html',
+  // The .scss next to this component is not wired up, and wiring it would change
+  // the layout of the whole dialog, so the one rule the button needs lives here.
+  styles: '.suggest-category { margin-left: 12px; }',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TransactionFormComponent {
@@ -41,8 +50,11 @@ export class TransactionFormComponent {
   readonly categories = signal<Category[]>([]);
   readonly fixedCosts = signal<FixedCost[]>([]);
   readonly isEdit = !!this.data;
-  private pendingSuggestion?: Subscription;
+  private openSuggestionRequest?: Subscription;
   readonly newCategoryOffer = signal<'none' | 'open' | 'creating' | 'failed'>('none');
+  readonly offeredCategory = signal<Category | null>(null);
+  // What became of the suggestion the user asked for: on its way, or nothing found.
+  readonly requestedSuggestion = signal<'none' | 'waiting' | 'nothing'>('none');
   readonly newCategoryName = this.fb.nonNullable.control('', Validators.required);
 
   readonly form = this.fb.group({
@@ -59,6 +71,10 @@ export class TransactionFormComponent {
   });
 
   constructor() {
+    // A report about one name and type says nothing about the next.
+    this.form.valueChanges.subscribe(() => {
+      if (this.requestedSuggestion() === 'nothing') this.requestedSuggestion.set('none');
+    });
     this.categoryService.getCategories().subscribe((cats) => this.categories.set(cats));
     this.fixedCostService.getFixedCosts().subscribe((fc) => this.fixedCosts.set(fc));
 
@@ -71,12 +87,10 @@ export class TransactionFormComponent {
         categoryControl.setValidators(Validators.required);
       }
       categoryControl.updateValueAndValidity();
-      this.withdrawNewCategoryOfferIfObsolete();
+      this.withdrawOffersIfObsolete();
       this.suggestCategoryIfOpen();
     });
-    this.form.controls.categoryId.valueChanges.subscribe(() =>
-      this.withdrawNewCategoryOfferIfObsolete(),
-    );
+    this.form.controls.categoryId.valueChanges.subscribe(() => this.withdrawOffersIfObsolete());
     this.form.controls.fixedCostId.valueChanges.subscribe((fixedCostId) => {
       const fc = this.fixedCosts().find((f) => f.id === fixedCostId);
       if (!fc) return;
@@ -84,7 +98,7 @@ export class TransactionFormComponent {
       if (fc.categoryId) {
         this.form.controls.categoryId.setValue(fc.categoryId);
       }
-      this.withdrawNewCategoryOfferIfObsolete();
+      this.withdrawOffersIfObsolete();
     });
   }
 
@@ -115,33 +129,80 @@ export class TransactionFormComponent {
 
   // Runs when the name field is left or the type is chosen, whichever comes last.
   suggestCategoryIfOpen(): void {
-    const { name, description, type } = this.form.getRawValue();
-    if (!name?.trim() || !type || !this.categoryIsOpenForSuggestion()) return;
-    // An open offer has to be accepted or rejected first; a new answer would discard it.
-    if (this.newCategoryOffer() !== 'none') return;
+    if (!this.categoryIsOpenForSuggestion() || this.hasOpenOffer()) return;
+    // A suggestion the user asked for is theirs to answer, so nothing overtakes it.
+    if (this.requestedSuggestion() === 'waiting') return;
 
-    // A newer name or type makes a pending answer outdated.
-    this.pendingSuggestion?.unsubscribe();
-    this.pendingSuggestion = this.categorySuggestionService
+    this.requestSuggestion((suggestion) => {
+      // Check again what the user changed while the answer was on its way.
+      if (!suggestion || !this.categoryIsOpenForSuggestion()) return;
+      if (suggestion.categoryId) {
+        this.form.controls.categoryId.setValue(suggestion.categoryId);
+      } else if (suggestion.newCategoryName) {
+        this.offerNewCategory(suggestion.newCategoryName);
+      }
+    });
+  }
+
+  // Runs when the user asks for a suggestion, whatever the category field holds.
+  suggestCategoryOnRequest(): void {
+    // The button stays enabled while waiting so it keeps the focus it was given,
+    // which leaves it to this to ignore a second click.
+    if (!this.canSuggestCategory() || this.requestedSuggestion() === 'waiting') return;
+
+    this.requestedSuggestion.set('waiting');
+    this.requestSuggestion((suggestion) => {
+      this.requestedSuggestion.set('none');
+      // Check again what the user changed while the answer was on its way.
+      if (!this.categoryIsEditable()) return;
+      const suggested = this.categories().find((c) => c.id === suggestion?.categoryId);
+      // Accepting is left to the user, as either answer replaces what the field holds.
+      if (suggested) {
+        this.offeredCategory.set(suggested);
+      } else if (suggestion?.newCategoryName) {
+        this.offerNewCategory(suggestion.newCategoryName);
+      } else {
+        // The user asked for this one, so an empty answer is worth saying out loud.
+        this.requestedSuggestion.set('nothing');
+      }
+    });
+  }
+
+  acceptSuggestedCategory(): void {
+    const suggested = this.offeredCategory();
+    if (!suggested) return;
+    this.form.controls.categoryId.setValue(suggested.id);
+    this.closeSuggestedCategoryOffer();
+  }
+
+  rejectSuggestedCategory(): void {
+    this.closeSuggestedCategoryOffer();
+  }
+
+  // Both triggers ask the same question and differ in what they do with the answer,
+  // which can take over 10 s to arrive. A failed call answers with nothing: a
+  // suggestion is optional, so the user simply picks the category.
+  private requestSuggestion(useAnswer: (suggestion: CategorySuggestion | null) => void): void {
+    const { name, description, type } = this.form.getRawValue();
+    if (!name?.trim() || !type) return;
+
+    // A newer request makes a pending answer outdated.
+    this.openSuggestionRequest?.unsubscribe();
+    this.openSuggestionRequest = this.categorySuggestionService
       .suggestCategory({
         name,
         description: description || undefined,
         type: type as TransactionType,
       })
       .subscribe({
-        next: ({ categoryId, newCategoryName }) => {
-          // Answers can take over 10 s, so check again what the user changed meanwhile.
-          if (!this.categoryIsOpenForSuggestion()) return;
-          if (categoryId) {
-            this.form.controls.categoryId.setValue(categoryId);
-          } else if (newCategoryName) {
-            this.newCategoryName.setValue(newCategoryName);
-            this.newCategoryOffer.set('open');
-          }
-        },
-        // A suggestion is optional; on failure the user simply picks the category.
-        error: () => {},
+        next: useAnswer,
+        error: () => useAnswer(null),
       });
+  }
+
+  private offerNewCategory(name: string): void {
+    this.newCategoryName.setValue(name);
+    this.newCategoryOffer.set('open');
   }
 
   acceptNewCategory(): void {
@@ -161,11 +222,16 @@ export class TransactionFormComponent {
     this.closeNewCategoryOffer();
   }
 
-  // Whatever set the category, hid it or took it over, the offer no longer applies.
+  // Whatever set the category, hid it or took it over, an offer no longer applies.
   // The focus stays where the user is working, so this does not hand it on.
-  private withdrawNewCategoryOfferIfObsolete(): void {
+  private withdrawOffersIfObsolete(): void {
+    // A new category is only ever offered for an empty field.
     if (!this.categoryIsOpenForSuggestion()) {
       this.newCategoryOffer.set('none');
+    }
+    // Replacing the category stays on offer until the field is out of the user's hands.
+    if (!this.categoryIsEditable()) {
+      this.offeredCategory.set(null);
     }
   }
 
@@ -175,10 +241,33 @@ export class TransactionFormComponent {
     this.categorySelect()?.focus();
   }
 
+  private closeSuggestedCategoryOffer(): void {
+    this.offeredCategory.set(null);
+    this.categorySelect()?.focus();
+  }
+
+  // The button needs the fields a suggestion is built from, and it keeps out of the
+  // way while a fixed cost determines the category or an offer waits to be answered.
+  canSuggestCategory(): boolean {
+    const { name, type } = this.form.getRawValue();
+    if (!name?.trim() || !type) return false;
+    return this.categoryIsEditable() && !this.hasOpenOffer();
+  }
+
+  // The user fills in the category as long as it is shown and no fixed cost determines it.
+  private categoryIsEditable(): boolean {
+    const { type, fixedCostId } = this.form.getRawValue();
+    return type !== 'INITIAL' && !fixedCostId;
+  }
+
   // A suggestion only fills an empty, visible category that no fixed cost determines.
   private categoryIsOpenForSuggestion(): boolean {
-    const { type, categoryId, fixedCostId } = this.form.getRawValue();
-    return type !== 'INITIAL' && !categoryId && !fixedCostId;
+    return this.categoryIsEditable() && !this.form.getRawValue().categoryId;
+  }
+
+  // An open offer has to be accepted or rejected first; a new answer would discard it.
+  private hasOpenOffer(): boolean {
+    return this.newCategoryOffer() !== 'none' || !!this.offeredCategory();
   }
 
   cancel(): void {

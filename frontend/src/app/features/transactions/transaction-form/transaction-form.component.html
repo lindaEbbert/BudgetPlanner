@@ -48,6 +48,34 @@
           <mat-error>Kategorie erforderlich</mat-error>
         }
       </mat-form-field>
+      <button
+        mat-stroked-button
+        type="button"
+        class="suggest-category"
+        [disabled]="!canSuggestCategory()"
+        (click)="suggestCategoryOnRequest()"
+      >
+        Kategorie vorschlagen
+      </button>
+      <p role="status">
+        @switch (requestedSuggestion()) {
+          @case ('waiting') {
+            Vorschlag wird geholt…
+          }
+          @case ('nothing') {
+            Keine Kategorie vorgeschlagen.
+          }
+        }
+      </p>
+      @if (offeredCategory(); as suggested) {
+        <div>
+          <p role="status">Vorschlag: Kategorie „{{ suggested.name }}“ übernehmen?</p>
+          <button mat-button type="button" (click)="rejectSuggestedCategory()">Verwerfen</button>
+          <button mat-stroked-button type="button" (click)="acceptSuggestedCategory()">
+            Übernehmen
+          </button>
+        </div>
+      }
       @if (newCategoryOffer() !== 'none') {
         <div>
           <p role="status">Keine passende Kategorie gefunden. Neue Kategorie anlegen?</p>
