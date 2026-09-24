@@ -1,35 +1,63 @@
-# 08: LLM-Provider für die Category Suggestion wechseln
+# 12: LLM-Anbieter für die Category Suggestion auswählen
 
-**What to build:** Die Category Suggestion läuft heute über `glm-4.7-flash`
+**What to build:** Die Category Suggestion lief bisher über `glm-4.7-flash`
 bei z.ai. Im Free Tier antwortet der Dienst fast immer mit 429, der Vorschlag
-ist dadurch live praktisch nie zu sehen. Provider und Modell sollen gewechselt
-werden. Kandidaten: OpenAI, JEV (TypeSafe) oder eine lokale Alternative
-(z. B. Ollama). Damit ein weiterer Wechsel später kein Code-Umbau mehr ist,
-werden Base-URL, Modell und Key über `.env` konfigurierbar.
+ist dadurch live praktisch nie zu sehen. Dieses Ticket misst Kandidaten mit
+einem festen Beispielsatz und entscheidet, welcher Anbieter und welches Modell
+Standard werden. Die Umschaltung selbst ist nach
+[Ticket 08](08-llm-endpoint-konfigurierbar.md) nur eine Änderung in der
+`.env`.
 
-**Blocked by:** None (can start immediately)
+Wichtigstes Kriterium: kostenlos oder günstig; danach, dass möglichst wenig
+Daten an Dritte gehen.
+
+**Blocked by:** 08
 
 **Status:** ready-for-agent
 
-- [ ] Qualität und Latenz der Kandidaten sind mit denselben Beispielen
-      gemessen wie bei der Diagnose zu Ticket 03 (gleiche Transaktionsnamen,
-      gleiche Kategorienliste)
-- [ ] Für jeden Kandidaten ist geklärt: OpenAI-kompatibler Endpoint ja/nein,
-      Kosten bzw. Free Tier, und ob `json_schema` unterstützt wird
+## Kandidaten
+
+- LM Studio lokal: **Gemma 4 E4B** (QAT) und **Qwen 3.5 4B** (Q8), Denkmodus
+  bei Qwen abgeschaltet
+- **OpenAI**
+- ein bis zwei externe Anbieter mit OpenAI-kompatiblem Endpoint und
+  zuverlässig nutzbarem Free Tier (z. B. Google Gemini, Groq — Limits und
+  `json_schema`-Support recherchieren)
+
+Nicht Kandidat: Jev (siehe Out of scope).
+
+## Acceptance criteria
+
+- [ ] Beispielsatz liegt in `.scratch/category-suggestions/eval-beispiele.md`:
+      10–15 Transaktionen gegen eine feste Kategorienliste — klare Treffer auf
+      eine bestehende Category, Fälle für eine neue Category, Fälle für
+      „kein Vorschlag“, abweichende Groß-/Kleinschreibung. Die erwarteten
+      Ergebnisse legt Linda fest
+- [ ] `backend/scripts/evaluate_category_suggestions.py` ruft
+      `suggest_category` für jedes Beispiel mit der aktuellen `.env` auf und
+      gibt Treffer und Antwortzeit aus; Skript und Beispielsatz bleiben im
+      Repo für spätere Wechsel
+- [ ] Für jeden Kandidaten ist gemessen und festgehalten:
+  - [ ] Trefferquote auf dem Beispielsatz (Schwelle: ≥ 80 %)
+  - [ ] typische Antwortzeit bei geladenem Modell (Schwelle: ≤ 3 s);
+        Kaltstart separat notiert
+  - [ ] extern: keine 429er bei ~20 Anfragen in Folge im Free Tier
+  - [ ] extern: Kosten bzw. Free Tier, `json_schema`-Support
 - [ ] Bei einem externen Anbieter ist geprüft, welche Daten rausgehen — heute
-      nur `name`, `description`, `type` und die Kategorienamen (Spec-Story 18)
-- [ ] Fällt die Wahl auf Jev: entschieden, woher der Vorschlag für eine *neue*
-      Category kommt (zweites Modell, oder der Hinweis öffnet sich mit leerem
-      Namensfeld) — Jev kann keinen Namen erzeugen
-- [ ] Base-URL, Modell und API-Key kommen aus `.env` statt aus Konstanten in
-      `category_suggestion_service.py`; der ersetzte OpenAI-Client
-      (`model._client`) ist dabei überdacht
-- [ ] `backend/README.md`, `.env`-Beispiel und OpenAPI-Beschreibung des
-      Endpoints nennen den neuen Anbieter
-- [ ] Die bestehenden Tests zu Ticket 03 laufen unverändert weiter (der
-      LLM-Aufruf ist dort gemockt)
-- [ ] [ADR 0011](../../../docs/adr/0011-category-suggestions-via-external-llm.md)
-      ist ergänzt
+      nur `name`, `description`, `type` und die Kategorienamen
+      (Spec-Story 18)
+- [ ] Entscheidung: Erfüllen mehrere Kandidaten die Schwellen, gewinnt lokal
+- [ ] ADR 0012 ist um das gewählte Modell und die Messwerte ergänzt
+- [ ] `backend/README.md` und `.env.example` nennen den gewählten Anbieter
+- [ ] Standardwert von `LLM_TIMEOUT_SECONDS` ist anhand der Messung
+      festgelegt
+
+## Out of scope
+
+- **Jev (TypeSafe)** für den Teilschritt „bestehende Category wählen“ — eigenes
+  Ticket, falls die Messung zeigt, dass das LLM beim Auswählen zu langsam ist
+- `LLM_EXTRA_BODY` — nur nachziehen, falls ein Kandidat ohne
+  anbieterspezifische Parameter nicht brauchbar ist
 
 ## Comments
 
@@ -84,3 +112,17 @@ werden Base-URL, Modell und Key über `.env` konfigurierbar.
   - Quellen: <https://docs.typesafe.ai/introduction>,
     <https://pydantic.dev/docs/ai/models/typesafe/>,
     <https://typesafe.ai/blog/introducing-system-one-models-and-jev>
+
+- 2026-09-23: Nach dem Grilling mit Linda aufgeteilt. Die Konfigurierbarkeit
+  über `.env` ist nach [08](08-llm-endpoint-konfigurierbar.md) gewandert
+  und kommt zuerst, weil diese Messung sie braucht. Entschieden:
+  - Lokal ist wieder im Rennen — über **LM Studio** statt Ollama, weil es den
+    Rechner besser unterstützt. ADR 0011 wird dafür durch ADR 0012 abgelöst
+    (in Ticket 08).
+  - Der Vorschlag für eine *neue* Category bleibt. Jev wäre nur für den
+    Teilschritt „bestehende wählen“ sinnvoll und ist aus diesem Ticket
+    herausgenommen.
+  - Die Beispiele aus der Diagnose zu Ticket 03 sind nirgends festgehalten;
+    deshalb ein neuer, fester Beispielsatz im Repo.
+  - Eine Wahl pro User zwischen lokal und extern →
+    [Ticket 11](11-user-waehlt-suggestion-anbieter.md).
