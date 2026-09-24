@@ -13,10 +13,11 @@ from src.app.repositories.category_repository import CategoryRepository
 category_repository = CategoryRepository()
 logger = logging.getLogger(__name__)
 
-Z_AI_BASE_URL = "https://api.z.ai/api/paas/v4/"
-Z_AI_MODEL = "glm-4.7-flash"
 # Suggestions are fetched while the user fills in the form, so fail fast.
-Z_AI_TIMEOUT_SECONDS = 10
+DEFAULT_LLM_TIMEOUT_SECONDS = 10
+# Local servers like LM Studio need no key, but the OpenAI client requires one.
+# Passing a placeholder also keeps the client from sending OPENAI_API_KEY to a foreign endpoint.
+LLM_API_KEY_PLACEHOLDER = "not-needed"
 
 
 @dataclass(frozen=True)
@@ -50,18 +51,21 @@ def _build_prompt(name, description, transaction_type, category_names):
 
 
 def _build_model():
-    api_key = os.getenv("Z_AI_API_KEY")
-    if not api_key:
-        raise RuntimeError("Z_AI_API_KEY is not set")
+    base_url = os.getenv("LLM_BASE_URL")
+    model_name = os.getenv("LLM_MODEL")
+    api_key = os.getenv("LLM_API_KEY") or LLM_API_KEY_PLACEHOLDER
+    timeout_seconds = float(os.getenv("LLM_TIMEOUT_SECONDS") or DEFAULT_LLM_TIMEOUT_SECONDS)
+    if not base_url or not model_name:
+        # No default endpoint: without configuration nothing may be sent anywhere.
+        raise RuntimeError("LLM_BASE_URL and LLM_MODEL must be set")
 
-    # Picking a category needs no reasoning; thinking mode only adds latency.
-    model = openai(Z_AI_MODEL, api_key=api_key, extra_body={"thinking": {"type": "disabled"}})
-    # ai_sdk's openai() cannot set a base URL, so swap in a client pointed at z.ai.
+    model = openai(model_name, api_key=api_key)
+    # ai_sdk's openai() cannot set a base URL, so swap in a client pointed at the configured endpoint.
     # No retries: generate_object already falls back to a second request on failure.
     model._client = OpenAI(
         api_key=api_key,
-        base_url=Z_AI_BASE_URL,
-        timeout=Z_AI_TIMEOUT_SECONDS,
+        base_url=base_url,
+        timeout=timeout_seconds,
         max_retries=0,
     )
     return model

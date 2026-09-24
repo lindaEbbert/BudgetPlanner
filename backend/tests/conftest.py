@@ -96,7 +96,8 @@ def model_answers(monkeypatch):
 
     Call it with the category names the model should answer; it returns the recorded calls.
     """
-    monkeypatch.setenv("Z_AI_API_KEY", "test-key")
+    monkeypatch.setenv("LLM_BASE_URL", "http://127.0.0.1:9/v1")
+    monkeypatch.setenv("LLM_MODEL", "test-model")
 
     def answer_with(existing_category_name=None, new_category_name=None):
         calls = []

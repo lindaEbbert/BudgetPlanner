@@ -9,7 +9,7 @@ Flask REST API with JWT authentication, a 3-layer architecture, and PostgreSQL.
 - **Database**: PostgreSQL
 - **ORM**: SQLAlchemy 2.0
 - **Migrations**: Alembic
-- **AI**: `ai-sdk-python` → `glm-4.7-flash` via the z.ai API (category suggestions)
+- **AI**: `ai-sdk-python` → any OpenAI-compatible LLM endpoint, LM Studio by default (category suggestions)
 
 ## Architecture
 
@@ -43,7 +43,7 @@ backend/
 │   ├── services/
 │   │   ├── auth_service.py
 │   │   ├── category_service.py
-│   │   ├── category_suggestion_service.py  # LLM category suggestion (z.ai)
+│   │   ├── category_suggestion_service.py  # LLM category suggestion
 │   │   ├── transaction_service.py       # balance & carryover calculation
 │   │   ├── budget_service.py            # budget spent/remaining calculation
 │   │   ├── fixed_cost_service.py        # projections & required-reserve calculation
@@ -117,7 +117,7 @@ all ids are UUIDs. JSON bodies use camelCase keys; responses do too.
 | GET | `/transactions` | `?month&year&day&include_voided` (all optional) | List transactions, newest first |
 | GET | `/transactions/balance` | `?month&year&day` (optional) | Computed balance — `{ income, expense, initialBalance, balance }`. With `month`/`year`/`day` the balance is calculated up to that date incl. carryover |
 | POST | `/transactions` | `name`, `amount`, `type`, `transactionDate`, `categoryId`*, `description`?, `fixedCostId`? | Create a transaction. `type`: `INCOME` \| `EXPENSE` \| `INITIAL`. `categoryId` required unless `type` is `INITIAL` |
-| POST | `/transactions/category-suggestion` | `name`, `type` (`INCOME` \| `EXPENSE` \| `INITIAL`), `description`? | Category Suggestion from an LLM — `{ categoryId, newCategoryName }`: an existing category's id, a proposed new category name, or both `null` (no suggestion, also when the LLM call fails). Only `name`, `description`, `type` and the user's category names are sent to z.ai. Writes nothing |
+| POST | `/transactions/category-suggestion` | `name`, `type` (`INCOME` \| `EXPENSE` \| `INITIAL`), `description`? | Category Suggestion from an LLM — `{ categoryId, newCategoryName }`: an existing category's id, a proposed new category name, or both `null` (no suggestion, also when the LLM call fails). Only `name`, `description`, `type` and the user's category names are sent to the configured LLM endpoint (`LLM_BASE_URL`, LM Studio by default). Writes nothing |
 | PUT | `/transactions/<id>` | any of the create fields | Update a transaction |
 | POST | `/transactions/<id>/void` | — | Mark a transaction as voided (it stops counting; not deleted) |
 | DELETE | `/transactions/<id>` | — | Not allowed — always `405`; use void instead |
@@ -205,19 +205,21 @@ Swagger UI is loaded from jsDelivr (pinned version with integrity hashes), so
    pip install -r requirements.txt
    ```
 
-3. **Create `.env` file** in the `backend/` directory
-   ```env
-   DB_USER=your_user
-   DB_PASSWORD=your_password
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=budget_planner_db
-   JWT_SECRET_KEY=your_secret_key
-   Z_AI_API_KEY=your_z_ai_api_key
-   ```
-   `Z_AI_API_KEY` comes from the [z.ai API console](https://z.ai/manage-apikey/apikey-list)
-   and is only needed for category suggestions — without it the suggestion
-   endpoint simply returns no suggestion.
+3. **Create `.env` file** in the `backend/` directory by copying
+   [`.env.example`](.env.example) and filling in your values.
+
+   The `LLM_*` variables are only needed for category suggestions — without
+   `LLM_BASE_URL` and `LLM_MODEL` the suggestion endpoint simply returns no
+   suggestion. Any OpenAI-compatible endpoint works; the default is a local
+   model via [LM Studio](https://lmstudio.ai/):
+   - Load the model in LM Studio before using the app. The first request after
+     loading can take longer than the timeout and then returns no suggestion.
+   - Start the server in LM Studio's Developer tab (default
+     `http://localhost:1234/v1`) and set `LLM_MODEL` to the model ID it shows.
+   - For models with a thinking mode (e.g. Qwen), turn thinking off in
+     LM Studio — a category needs no reasoning and it only adds latency.
+   - `LLM_API_KEY` is only needed for an external provider.
+     `LLM_TIMEOUT_SECONDS` (default 10) can be raised for a slow local model.
 
 4. **Run migrations**
    ```bash

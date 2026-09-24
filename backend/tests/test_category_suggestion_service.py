@@ -1,5 +1,6 @@
 import json
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
 
@@ -68,7 +69,8 @@ def test_user_without_categories_gets_a_new_category_name(model_answers, user):
 ])
 def test_failing_model_call_returns_no_suggestion(monkeypatch, user, error):
     category_service.create_category(user.id, "Lebensmittel")
-    monkeypatch.setenv("Z_AI_API_KEY", "test-key")
+    monkeypatch.setenv("LLM_BASE_URL", "http://127.0.0.1:9/v1")
+    monkeypatch.setenv("LLM_MODEL", "test-model")
 
     def failing_generate_object(**kwargs):
         raise error
@@ -80,11 +82,14 @@ def test_failing_model_call_returns_no_suggestion(monkeypatch, user, error):
     assert suggestion == NO_SUGGESTION
 
 
-def test_missing_z_ai_api_key_returns_no_suggestion_without_calling_the_model(monkeypatch, model_answers, user):
+@pytest.mark.parametrize("missing_setting", ["LLM_BASE_URL", "LLM_MODEL"])
+def test_missing_endpoint_setting_returns_no_suggestion_without_calling_the_model(
+    monkeypatch, model_answers, user, missing_setting
+):
     category_service.create_category(user.id, "Lebensmittel")
     calls = model_answers(existing_category_name="Lebensmittel")
-    monkeypatch.delenv("Z_AI_API_KEY")
-    # Must not silently fall back to an OpenAI key from the environment.
+    monkeypatch.delenv(missing_setting)
+    # Must not silently fall back to OpenAI via its own environment variables.
     monkeypatch.setenv("OPENAI_API_KEY", "some-openai-key")
 
     suggestion = category_suggestion_service.suggest_category(user.id, "Rewe", None, "EXPENSE")
@@ -109,9 +114,9 @@ def test_sends_transaction_text_and_category_names_but_no_ids_to_the_model(model
 
 
 @pytest.fixture
-def fake_z_ai(monkeypatch):
-    """Local stand-in for the z.ai chat completions API that records every request."""
-    state = SimpleNamespace(answer={}, requests=[])
+def fake_llm_endpoint(monkeypatch):
+    """Local stand-in for an OpenAI-compatible chat completions API that records every request."""
+    state = SimpleNamespace(answer={}, requests=[], delay_seconds=0)
 
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self):
@@ -121,6 +126,7 @@ def fake_z_ai(monkeypatch):
                 "authorization": self.headers.get("Authorization"),
                 "body": body,
             })
+            time.sleep(state.delay_seconds)
             payload = json.dumps({
                 "id": "chatcmpl-test",
                 "object": "chat.completion",
@@ -133,21 +139,24 @@ def fake_z_ai(monkeypatch):
                 }],
                 "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
             }).encode()
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(payload)))
-            self.end_headers()
-            self.wfile.write(payload)
+            try:
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+            except ConnectionError:
+                # The client already gave up (timeout test); nothing left to answer.
+                pass
 
         def log_message(self, *args):
             pass
 
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True).start()
-    monkeypatch.setenv("Z_AI_API_KEY", "test-key")
-    monkeypatch.setattr(
-        category_suggestion_service, "Z_AI_BASE_URL", f"http://127.0.0.1:{server.server_port}/api/paas/v4/"
-    )
+    monkeypatch.setenv("LLM_BASE_URL", f"http://127.0.0.1:{server.server_port}/v1")
+    monkeypatch.setenv("LLM_MODEL", "test-model")
+    monkeypatch.setenv("LLM_API_KEY", "test-key")
     # If the client swap in _build_model ever stops working, fail locally instead of calling the real OpenAI API.
     monkeypatch.setenv("OPENAI_BASE_URL", "http://127.0.0.1:9/")
 
@@ -157,16 +166,43 @@ def fake_z_ai(monkeypatch):
     server.server_close()
 
 
-def test_suggestion_request_reaches_the_z_ai_endpoint_with_key_model_and_thinking_disabled(fake_z_ai, user):
+def test_suggestion_request_reaches_the_configured_endpoint_with_its_model_and_key(fake_llm_endpoint, user):
     groceries, _ = category_service.create_category(user.id, "Lebensmittel")
-    fake_z_ai.answer = {"existing_category_name": "Lebensmittel", "new_category_name": None}
+    fake_llm_endpoint.answer = {"existing_category_name": "Lebensmittel", "new_category_name": None}
 
     suggestion = category_suggestion_service.suggest_category(user.id, "Rewe", "Wocheneinkauf", "EXPENSE")
 
     assert suggestion == CategorySuggestion(category_id=groceries.id)
-    assert fake_z_ai.requests
-    for request in fake_z_ai.requests:
-        assert request["path"] == "/api/paas/v4/chat/completions"
+    assert fake_llm_endpoint.requests
+    for request in fake_llm_endpoint.requests:
+        assert request["path"] == "/v1/chat/completions"
         assert request["authorization"] == "Bearer test-key"
-        assert request["body"]["model"] == "glm-4.7-flash"
-        assert request["body"]["thinking"] == {"type": "disabled"}
+        assert request["body"]["model"] == "test-model"
+        # No provider-specific parameters: any OpenAI-compatible endpoint must accept the request.
+        assert "thinking" not in request["body"]
+
+
+def test_endpoint_without_api_key_still_gets_the_request(monkeypatch, fake_llm_endpoint, user):
+    groceries, _ = category_service.create_category(user.id, "Lebensmittel")
+    fake_llm_endpoint.answer = {"existing_category_name": "Lebensmittel", "new_category_name": None}
+    monkeypatch.delenv("LLM_API_KEY")
+    # A local server like LM Studio needs no key; an OpenAI key must never leak to it.
+    monkeypatch.setenv("OPENAI_API_KEY", "some-openai-key")
+
+    suggestion = category_suggestion_service.suggest_category(user.id, "Rewe", None, "EXPENSE")
+
+    assert suggestion == CategorySuggestion(category_id=groceries.id)
+    assert fake_llm_endpoint.requests
+    for request in fake_llm_endpoint.requests:
+        assert "some-openai-key" not in (request["authorization"] or "")
+
+
+def test_endpoint_slower_than_the_configured_timeout_returns_no_suggestion(monkeypatch, fake_llm_endpoint, user):
+    category_service.create_category(user.id, "Lebensmittel")
+    fake_llm_endpoint.answer = {"existing_category_name": "Lebensmittel", "new_category_name": None}
+    fake_llm_endpoint.delay_seconds = 1
+    monkeypatch.setenv("LLM_TIMEOUT_SECONDS", "0.2")
+
+    suggestion = category_suggestion_service.suggest_category(user.id, "Rewe", None, "EXPENSE")
+
+    assert suggestion == NO_SUGGESTION

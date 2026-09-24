@@ -398,10 +398,11 @@ paths:
       operationId: suggestCategory
       summary: Suggest a category for a transaction
       description: >-
-        Asks an LLM (z.ai) for a category. Only `name`, `description`, `type` and the names of
-        the user's categories are sent. Writes nothing. The answer is an existing category's
-        ID, a proposed new category name, or both `null` when there is no suggestion (also
-        when the LLM call fails or `Z_AI_API_KEY` is not set).
+        Asks an LLM for a category. Only `name`, `description`, `type` and the names of the
+        user's categories are sent to the configured LLM endpoint (`LLM_BASE_URL`, LM Studio by
+        default). Writes nothing. The answer is an existing category's ID, a proposed new
+        category name, or both `null` when there is no suggestion (also when the LLM call fails
+        or `LLM_BASE_URL` / `LLM_MODEL` are not set).
       requestBody:
         required: true
         content:
