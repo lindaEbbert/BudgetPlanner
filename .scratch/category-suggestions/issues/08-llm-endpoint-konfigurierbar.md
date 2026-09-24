@@ -12,7 +12,7 @@ Welcher Anbieter und welches Modell dauerhaft gewählt werden, entscheidet
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 ## Konfiguration
 
@@ -30,45 +30,45 @@ an OpenAI.
 
 ## Acceptance criteria
 
-- [ ] Base-URL, Modell, Key und Timeout kommen aus der `.env` wie in der
+- [x] Base-URL, Modell, Key und Timeout kommen aus der `.env` wie in der
       Tabelle oben
-- [ ] `ai_sdk.generate_object` und der ausgetauschte OpenAI-Client
+- [x] `ai_sdk.generate_object` und der ausgetauschte OpenAI-Client
       (`model._client`) bleiben — nur gespeist aus der Konfiguration
-- [ ] `extra_body={"thinking": ...}` ist ersatzlos entfernt; keine
+- [x] `extra_body={"thinking": ...}` ist ersatzlos entfernt; keine
       anbieterspezifische Logik im Code
-- [ ] Die Verhaltens-Tests aus [Ticket 03](03-backend-suggestion-service.md)
+- [x] Die Verhaltens-Tests aus [Ticket 03](03-backend-suggestion-service.md)
       laufen inhaltlich unverändert; nur die Konfigurations-Tests sind auf
       `LLM_*` umgestellt:
-  - [ ] `model_answers` (conftest) und `test_failing_model_call…` setzen
+  - [x] `model_answers` (conftest) und `test_failing_model_call…` setzen
         `LLM_BASE_URL` und `LLM_MODEL` statt `Z_AI_API_KEY`
-  - [ ] `fake_z_ai` heißt `fake_llm_endpoint`; der Test prüft, dass die
+  - [x] `fake_z_ai` heißt `fake_llm_endpoint`; der Test prüft, dass die
         Anfrage an die konfigurierte Base-URL geht, mit konfiguriertem Modell
         und Key und ohne `thinking`-Feld
-  - [ ] Parametrisierter Test: fehlende `LLM_BASE_URL` bzw. `LLM_MODEL` →
+  - [x] Parametrisierter Test: fehlende `LLM_BASE_URL` bzw. `LLM_MODEL` →
         kein Vorschlag, kein Modellaufruf (ersetzt den Test zum fehlenden
         z.ai-Key, inklusive der Absicherung gegen `OPENAI_API_KEY`)
-  - [ ] Neuer Test: ohne `LLM_API_KEY` geht die Anfrage trotzdem raus
-- [ ] `backend/.env.example` existiert mit allen Variablen (DB, JWT, LLM):
+  - [x] Neuer Test: ohne `LLM_API_KEY` geht die Anfrage trotzdem raus
+- [x] `backend/.env.example` existiert mit allen Variablen (DB, JWT, LLM):
       LM Studio als aktiver Block, ein externer Anbieter auskommentiert
-- [ ] `backend/README.md` verweist auf `.env.example`, beschreibt den
+- [x] `backend/README.md` verweist auf `.env.example`, beschreibt den
       Endpoint anbieter-neutral und nennt für LM Studio: Server starten,
       Modell vorab laden (Kaltstart), bei Qwen den Denkmodus abschalten
-- [ ] OpenAPI-Beschreibung des Endpoints ist anbieter-neutral („sent to the
+- [x] OpenAPI-Beschreibung des Endpoints ist anbieter-neutral („sent to the
       configured LLM endpoint (`LLM_BASE_URL`, LM Studio by default)“) und
       nennt statt `Z_AI_API_KEY` die fehlende Konfiguration
-- [ ] ADR 0012 „Category Suggestion über einen konfigurierbaren
+- [x] ADR 0012 „Category Suggestion über einen konfigurierbaren
       OpenAI-kompatiblen Endpoint, lokal als Standard“ ist angelegt; in
       [ADR 0011](../../../docs/adr/0011-category-suggestions-via-external-llm.md)
       ist der Provider-Abschnitt als durch 0012 ersetzt markiert
-- [ ] **Live mit LM Studio** (Gemma 4 E4B, QAT) ist in der App zu sehen:
-  - [ ] ein Vorschlag für eine **bestehende** Category belegt das leere Feld
+- [x] **Live mit LM Studio** (Gemma 4 E4B, QAT) ist in der App zu sehen:
+  - [x] ein Vorschlag für eine **bestehende** Category belegt das leere Feld
         vor ([Ticket 04](04-auto-vorschlag-leeres-feld.md))
-  - [ ] ein Vorschlag für eine **neue** Category öffnet den
+  - [x] ein Vorschlag für eine **neue** Category öffnet den
         Bestätigungs-Hinweis ([Ticket 04](04-auto-vorschlag-leeres-feld.md) /
         [05](05-manueller-vorschlag-button.md))
-  - [ ] bei ausgeschaltetem LM Studio erscheint „Keine Kategorie
+  - [x] bei ausgeschaltetem LM Studio erscheint „Keine Kategorie
         vorgeschlagen.“ und die App läuft fehlerfrei weiter
-- [ ] Reicht der Timeout von 10 s live nicht, darf `LLM_TIMEOUT_SECONDS` in
+- [x] Reicht der Timeout von 10 s live nicht, darf `LLM_TIMEOUT_SECONDS` in
       der eigenen `.env` erhöht werden; der beobachtete Wert steht als
       Kommentar in diesem Ticket, der Standard bleibt bis Ticket 12 bei 10
 
@@ -92,3 +92,16 @@ an OpenAI.
   Der Live-Test schließt die offene Lücke aus
   [Ticket 04](04-auto-vorschlag-leeres-feld.md): Der Bestätigungs-Hinweis für
   eine neue Category war bisher nur über gemockte Tests abgesichert.
+- 2026-09-24: Umgesetzt in `892df0e`; `backend/test.http` nennt statt
+  `Z_AI_API_KEY` jetzt `LLM_BASE_URL` und `LLM_MODEL`. Alle 26 Backend-Tests
+  grün. Live mit LM Studio (Gemma 4 E4B, QAT) getestet: Ein Vorschlag für
+  eine bestehende Category belegt das leere Feld vor, ein Vorschlag für eine
+  neue Category öffnet den Bestätigungs-Hinweis. Damit ist die Lücke aus
+  [Ticket 04](04-auto-vorschlag-leeres-feld.md) geschlossen. Der Timeout von
+  10 s reicht, nachdem Linda die Modellparameter in LM Studio angepasst hat;
+  `LLM_TIMEOUT_SECONDS` bleibt ungesetzt.
+  - Bei ausgeschaltetem LM Studio zeigt der Button „Keine Kategorie
+    vorgeschlagen.“, die App läuft fehlerfrei weiter. Der automatische
+    Vorschlag zeigt dabei keinen Hinweis — so war es in Spec und Ticket 04
+    festgelegt. Linda möchte den Hinweis auch dort:
+    [Ticket 13](13-status-auch-beim-automatischen-vorschlag.md).
