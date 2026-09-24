@@ -164,7 +164,7 @@ Authorization: Bearer {{token}}
 GET http://localhost:5000/transactions?include_voided=true
 Authorization: Bearer {{token}}
 
-### POST Category Suggestion (needs Z_AI_API_KEY in .env; without it categoryId and newCategoryName are null)
+### POST Category Suggestion (needs LLM_BASE_URL and LLM_MODEL in .env; without them categoryId and newCategoryName are null)
 POST http://localhost:5000/transactions/category-suggestion
 Content-Type: application/json
 Authorization: Bearer {{token}}
