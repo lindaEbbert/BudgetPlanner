@@ -172,9 +172,13 @@ paths:
       operationId: createCategory
       summary: Create a category
       description: >-
-        The name must be unique among the user's categories that are not deleted. A name
-        still used by a deleted category fails with 500, because the database constraint
-        also covers deleted categories.
+        The name must be unique among the user's categories that are not deleted, ignoring
+        case and surrounding whitespace ("Miete" and "miete" cannot both be active). If a
+        deleted category of the user has the name (compared the same way),
+        nothing is created and the answer is 409 with that deleted category (the most
+        recently deleted one if there are several), so the client can offer to restore it.
+        With `ignoreDeletedCategory: true` a new category is created anyway; the deleted one
+        stays deleted.
       requestBody:
         required: true
         content:
@@ -201,13 +205,26 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '409':
-          description: The user already has a category with this name.
+          description: >-
+            The user already has an active category with this name, or a deleted category
+            has it and `ignoreDeletedCategory` is not `true` (then `deletedCategory` is set).
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: Kategorie mit diesem Namen existiert bereits
+                oneOf:
+                  - $ref: '#/components/schemas/Error'
+                  - $ref: '#/components/schemas/DeletedCategoryConflict'
+              examples:
+                nameTaken:
+                  value:
+                    error: Kategorie mit diesem Namen existiert bereits
+                deletedCategory:
+                  value:
+                    error: Es gibt eine gelöschte Kategorie mit diesem Namen
+                    deletedCategory:
+                      id: 6a039a0a-44c0-4d29-910f-dc08ee75aae7
+                      name: Miete
+                      deletedAt: '2026-09-17T08:15:00.000000'
         '415':
           $ref: '#/components/responses/UnsupportedMediaType'
         '422':
@@ -221,8 +238,11 @@ paths:
       operationId: updateCategory
       summary: Rename a category
       description: >-
-        A missing, empty or unchanged `name` leaves the category as it is. A name still
-        used by a deleted category fails with 500.
+        A missing, empty or unchanged `name` leaves the category as it is. If a deleted
+        category of the user has the new name (ignoring case and surrounding whitespace),
+        nothing changes and the answer is 409 with that deleted category, so the client can
+        warn first. With `ignoreDeletedCategory: true` the category is renamed anyway; the
+        deleted one stays deleted.
       requestBody:
         required: true
         content:
@@ -258,6 +278,20 @@ paths:
                 nameTaken:
                   value:
                     error: Name bereits vergeben
+        '409':
+          description: A deleted category has the new name and `ignoreDeletedCategory` is not `true`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletedCategoryConflict'
+              examples:
+                deletedCategory:
+                  value:
+                    error: Es gibt eine gelöschte Kategorie mit diesem Namen
+                    deletedCategory:
+                      id: 6a039a0a-44c0-4d29-910f-dc08ee75aae7
+                      name: Miete
+                      deletedAt: '2026-09-17T08:15:00.000000'
         '415':
           $ref: '#/components/responses/UnsupportedMediaType'
         '422':
@@ -280,6 +314,44 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/CategoryNotFound'
+        '422':
+          $ref: '#/components/responses/InvalidToken'
+
+  /categories/{category_id}/restore:
+    parameters:
+      - $ref: '#/components/parameters/CategoryId'
+    post:
+      tags: [Categories]
+      operationId: restoreCategory
+      summary: Restore a deleted category
+      description: >-
+        Brings a deleted category of the user back with its ID. Transactions, budgets and
+        fixed costs that still point to it hang on an active category again.
+      responses:
+        '200':
+          description: The restored category.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: The category does not exist, belongs to another user or is not deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Kategorie nicht gefunden
+        '409':
+          description: An active category of the user already has this name, ignoring case and surrounding whitespace.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Es gibt bereits eine aktive Kategorie mit diesem Namen
         '422':
           $ref: '#/components/responses/InvalidToken'
 
@@ -1218,6 +1290,10 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+        ignoreDeletedCategory:
+          type: boolean
+          default: false
+          description: Create a new category even if a deleted category has the name.
     CategoryUpdate:
       type: object
       properties:
@@ -1225,6 +1301,27 @@ components:
           type: [string, 'null']
           maxLength: 100
           description: New name. Missing, empty or unchanged leaves the name as it is.
+        ignoreDeletedCategory:
+          type: boolean
+          default: false
+          description: Rename even if a deleted category has the new name.
+    DeletedCategoryConflict:
+      type: object
+      required: [error, deletedCategory]
+      properties:
+        error:
+          type: string
+        deletedCategory:
+          type: object
+          required: [id, name, deletedAt]
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            deletedAt:
+              $ref: '#/components/schemas/NaiveTimestamp'
 
     # ------------------------------------------------------------ Transactions
 

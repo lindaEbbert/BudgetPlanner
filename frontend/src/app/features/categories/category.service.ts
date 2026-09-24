@@ -1,8 +1,14 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { Category, CreateCategoryDto } from '../../shared/models';
+import { Category, CreateCategoryDto, DeletedCategory } from '../../shared/models';
 import { ApiService } from '../../core/services/api.service';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+
+// The deleted category a create or rename was refused for, if that was the reason.
+export function deletedCategoryIn(error: unknown): DeletedCategory | null {
+  if (!(error instanceof HttpErrorResponse) || error.status !== 409) return null;
+  return error.error?.deletedCategory ?? null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class CategoryService extends ApiService {
@@ -25,5 +31,9 @@ export class CategoryService extends ApiService {
 
   deleteCategory(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/categories/${id}`);
+  }
+
+  restoreCategory(id: string): Observable<Category> {
+    return this.http.post<Category>(`${this.baseUrl}/categories/${id}/restore`, null);
   }
 }

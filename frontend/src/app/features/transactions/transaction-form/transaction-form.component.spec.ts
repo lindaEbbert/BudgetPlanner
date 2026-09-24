@@ -503,6 +503,87 @@ describe('TransactionFormComponent – category suggestion', () => {
     expectNoCreateCategoryRequest(httpMock);
   });
 
+  describe('when a deleted category has the new name', () => {
+    const deletedPets = { id: 'cat-old-pets', name: 'Haustiere', deletedAt: '2026-08-01T10:00:00' };
+
+    async function setupWithDeletedCategoryChoice() {
+      const { fixture, component, httpMock, offer } = await setupWithNewCategoryOffer();
+      await offer.acceptButton.click();
+      expectCreateCategoryRequest(httpMock).flush(
+        { error: 'Es gibt eine gelöschte Kategorie mit diesem Namen', deletedCategory: deletedPets },
+        { status: 409, statusText: 'Conflict' },
+      );
+      await fixture.whenStable();
+      return { fixture, component, httpMock };
+    }
+
+    function choiceButton(fixture: ComponentFixture<TransactionFormComponent>, text: string) {
+      return TestbedHarnessEnvironment.loader(fixture).getHarnessOrNull(
+        MatButtonHarness.with({ text }),
+      );
+    }
+
+    it('offers to restore it or to create a new one instead of the name field', async () => {
+      const { fixture, component } = await setupWithDeletedCategoryChoice();
+
+      expect(fixture.nativeElement.textContent).toContain('„Haustiere“');
+      expect(await choiceButton(fixture, 'Alte Kategorie wiederherstellen')).not.toBeNull();
+      expect(await choiceButton(fixture, 'Neue Kategorie anlegen')).not.toBeNull();
+      expect(await choiceButton(fixture, 'Abbrechen')).not.toBeNull();
+      expect(await getNewCategoryOffer(fixture)).toBeNull();
+      expect(fixture.nativeElement.textContent).not.toContain('Kategorie konnte nicht angelegt werden.');
+      expect(component.form.controls.categoryId.value).toBe('');
+    });
+
+    it('restores the deleted category and selects it', async () => {
+      const { fixture, component, httpMock } = await setupWithDeletedCategoryChoice();
+
+      await (await choiceButton(fixture, 'Alte Kategorie wiederherstellen'))!.click();
+
+      httpMock
+        .expectOne((req) => req.method === 'POST' && req.url.endsWith('/categories/cat-old-pets/restore'))
+        .flush({ ...petsCategory, id: 'cat-old-pets' });
+      expect(await (await getCategorySelect(fixture)).getValueText()).toBe('Haustiere');
+      expect(component.form.controls.categoryId.value).toBe('cat-old-pets');
+      expect(await choiceButton(fixture, 'Alte Kategorie wiederherstellen')).toBeNull();
+    });
+
+    it('creates a new category despite the deleted one and selects it', async () => {
+      const { fixture, component, httpMock } = await setupWithDeletedCategoryChoice();
+
+      await (await choiceButton(fixture, 'Neue Kategorie anlegen'))!.click();
+
+      const createRequest = expectCreateCategoryRequest(httpMock);
+      expect(createRequest.request.body).toEqual({ name: 'Haustiere', ignoreDeletedCategory: true });
+      createRequest.flush(petsCategory);
+      expect(component.form.controls.categoryId.value).toBe('cat-pets');
+      expect(await choiceButton(fixture, 'Neue Kategorie anlegen')).toBeNull();
+    });
+
+    it('returns to the offer with the editable name on cancel and creates nothing', async () => {
+      const { fixture, component, httpMock } = await setupWithDeletedCategoryChoice();
+
+      await (await choiceButton(fixture, 'Abbrechen'))!.click();
+
+      expectNoCreateCategoryRequest(httpMock);
+      const offer = await getNewCategoryOffer(fixture);
+      expect(offer).not.toBeNull();
+      expect(await offer!.nameInput.getValue()).toBe('Haustiere');
+      expect(await offer!.nameInput.isDisabled()).toBe(false);
+      expect(component.form.controls.categoryId.value).toBe('');
+    });
+
+    it('moves the focus to the name of the offer on cancel', async () => {
+      const { fixture } = await setupWithDeletedCategoryChoice();
+
+      await (await choiceButton(fixture, 'Abbrechen'))!.click();
+      await fixture.whenStable();
+
+      const offer = await getNewCategoryOffer(fixture);
+      expect(await offer!.nameInput.isFocused()).toBe(true);
+    });
+  });
+
   describe('when editing an existing transaction', () => {
     it('suggests a category for a transaction that was saved without one', async () => {
       const { fixture, component, httpMock } = setup(uncategorizedTransaction);

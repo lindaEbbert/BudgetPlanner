@@ -1,4 +1,13 @@
-import { Component, ChangeDetectionStrategy, inject, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -6,9 +15,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelect, MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { TransactionService } from '../transaction.service';
-import { CategoryService } from '../../categories/category.service';
+import { CategoryService, deletedCategoryIn } from '../../categories/category.service';
+import { DeletedCategoryChoiceComponent } from '../../categories/deleted-category-choice/deleted-category-choice.component';
 import { FixedCostService} from '../../fixed-costs/fixed-cost.service';
 import { CategorySuggestionService } from '../category-suggestion.service';
 import { FixedCost } from '../../../shared/models';
@@ -16,6 +26,7 @@ import {
   Transaction,
   Category,
   CategorySuggestion,
+  DeletedCategory,
   CreateTransactionDto,
   TransactionType,
 } from '../../../shared/models';
@@ -30,6 +41,7 @@ import {
     MatSelectModule,
     MatButtonModule,
     MatDatepickerModule,
+    DeletedCategoryChoiceComponent,
   ],
   templateUrl: './transaction-form.component.html',
   // The .scss next to this component is not wired up, and wiring it would change
@@ -45,13 +57,17 @@ export class TransactionFormComponent {
   private readonly categorySuggestionService = inject(CategorySuggestionService);
   private readonly dialogRef = inject(MatDialogRef<TransactionFormComponent>);
   readonly data: Transaction | null = inject(MAT_DIALOG_DATA, { optional: true });
+  private readonly injector = inject(Injector);
   private readonly categorySelect = viewChild<MatSelect>('categorySelect');
+  private readonly newCategoryNameInput = viewChild('newCategoryNameInput', { read: ElementRef });
 
   readonly categories = signal<Category[]>([]);
   readonly fixedCosts = signal<FixedCost[]>([]);
   readonly isEdit = !!this.data;
   private openSuggestionRequest?: Subscription;
   readonly newCategoryOffer = signal<'none' | 'open' | 'creating' | 'failed'>('none');
+  // A deleted category with the offered name; while set, the offer asks what to do about it.
+  readonly deletedCategory = signal<DeletedCategory | null>(null);
   readonly offeredCategory = signal<Category | null>(null);
   // What became of the suggestion the user asked for: on its way, or nothing found.
   readonly requestedSuggestion = signal<'none' | 'waiting' | 'nothing'>('none');
@@ -202,19 +218,55 @@ export class TransactionFormComponent {
 
   private offerNewCategory(name: string): void {
     this.newCategoryName.setValue(name);
+    this.deletedCategory.set(null);
     this.newCategoryOffer.set('open');
   }
 
   acceptNewCategory(): void {
+    this.selectCategoryFrom(this.categoryService.createCategory({ name: this.newCategoryName.value }));
+  }
+
+  restoreDeletedCategory(): void {
+    const deletedCategory = this.deletedCategory();
+    if (!deletedCategory) return;
+    this.selectCategoryFrom(this.categoryService.restoreCategory(deletedCategory.id));
+  }
+
+  // Create the offered category although a deleted one has the name; that one stays deleted.
+  createDespiteDeletedCategory(): void {
+    this.selectCategoryFrom(
+      this.categoryService.createCategory({
+        name: this.newCategoryName.value,
+        ignoreDeletedCategory: true,
+      }),
+    );
+  }
+
+  // Back to the offer with its editable name, nothing created.
+  dismissDeletedCategory(): void {
+    this.deletedCategory.set(null);
+    // Removing the choice takes the focused button with it, so hand the focus on
+    // once the offer's name field is back.
+    afterNextRender(() => this.newCategoryNameInput()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
+  }
+
+  private selectCategoryFrom(action: Observable<Category>): void {
     this.newCategoryOffer.set('creating');
-    this.categoryService.createCategory({ name: this.newCategoryName.value }).subscribe({
+    action.subscribe({
       next: (category) => {
         this.categories.update((categories) => [...categories, category]);
         this.form.controls.categoryId.setValue(category.id);
         this.closeNewCategoryOffer();
       },
-      // Keep the offer open so the user can change the name, try again or reject it.
-      error: () => this.newCategoryOffer.set('failed'),
+      error: (err) => {
+        const deletedCategory = deletedCategoryIn(err);
+        this.deletedCategory.set(deletedCategory);
+        // Either ask first whether the deleted category should come back instead, or keep
+        // the offer open so the user can change the name, try again or reject it.
+        this.newCategoryOffer.set(deletedCategory ? 'open' : 'failed');
+      },
     });
   }
 
@@ -227,7 +279,7 @@ export class TransactionFormComponent {
   private withdrawOffersIfObsolete(): void {
     // A new category is only ever offered for an empty field.
     if (!this.categoryIsOpenForSuggestion()) {
-      this.newCategoryOffer.set('none');
+      this.dropNewCategoryOffer();
     }
     // Replacing the category stays on offer until the field is out of the user's hands.
     if (!this.categoryIsEditable()) {
@@ -237,8 +289,14 @@ export class TransactionFormComponent {
 
   // Removing the offer takes the focused button with it, so hand the focus on.
   private closeNewCategoryOffer(): void {
-    this.newCategoryOffer.set('none');
+    this.dropNewCategoryOffer();
     this.categorySelect()?.focus();
+  }
+
+  // A deleted category only ever belongs to an open offer, so it goes with it.
+  private dropNewCategoryOffer(): void {
+    this.newCategoryOffer.set('none');
+    this.deletedCategory.set(null);
   }
 
   private closeSuggestedCategoryOffer(): void {

@@ -25,8 +25,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "name": "Tanzstunden",
-  "type": "INCOME"
+  "name": "Tanzstunden"
 }
 
 > {%
@@ -39,8 +38,7 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "name": "Strom",
-  "type": "EXPENSE"
+  "name": "Strom"
 }
 
 > {%
@@ -53,12 +51,42 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "name": "Tanzstunden aktualisiert",
-  "type": "INCOME"
+  "name": "Tanzstunden aktualisiert"
 }
 
 ### DELETE Category
 DELETE http://localhost:5000/categories/{{categoryIncomeId}}
+Authorization: Bearer {{token}}
+
+### POST Category - Name einer gelöschten Category (409 mit deletedCategory)
+POST http://localhost:5000/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Tanzstunden aktualisiert"
+}
+
+### POST Category - trotzdem neu anlegen (die gelöschte bleibt gelöscht)
+POST http://localhost:5000/categories
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Tanzstunden aktualisiert",
+  "ignoreDeletedCategory": true
+}
+
+> {%
+  client.global.set("categoryRecreatedId", response.body.id);
+%}
+
+### DELETE Category - die neu angelegte wieder löschen, damit Wiederherstellen geht
+DELETE http://localhost:5000/categories/{{categoryRecreatedId}}
+Authorization: Bearer {{token}}
+
+### POST Category wiederherstellen (alte ID kommt zurück)
+POST http://localhost:5000/categories/{{categoryIncomeId}}/restore
 Authorization: Bearer {{token}}
 
 ### ─────────────────────────────────────

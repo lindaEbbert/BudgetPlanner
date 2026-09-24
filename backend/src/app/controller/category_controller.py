@@ -14,6 +14,18 @@ def category_to_dict(cat):
     }
 
 
+def deleted_category_conflict(cat):
+    # 409 with the deleted category, so the client can offer to restore it or go on anyway
+    return jsonify({
+        'error': category_service.DELETED_CATEGORY_WITH_NAME,
+        'deletedCategory': {
+            'id': str(cat.id),
+            'name': cat.name,
+            'deletedAt': cat.deleted_at.isoformat(),
+        },
+    }), 409
+
+
 @category_blueprint.route('', methods=['GET'])
 @jwt_required()
 def get_categories():
@@ -32,7 +44,11 @@ def create_category():
     if not name:
         return jsonify({'error': 'Name erforderlich'}), 400
 
-    category, error = category_service.create_category(user_id, name)
+    category, error = category_service.create_category(
+        user_id, name, ignore_deleted_category=data.get('ignoreDeletedCategory') is True
+    )
+    if error == category_service.DELETED_CATEGORY_WITH_NAME:
+        return deleted_category_conflict(category)
     if error:
         return jsonify({'error': error}), 409
 
@@ -48,8 +64,11 @@ def update_category(category_id):
     category, error = category_service.update_category(
         category_id=category_id,
         user_id=user_id,
-        name=data.get('name')
+        name=data.get('name'),
+        ignore_deleted_category=data.get('ignoreDeletedCategory') is True
     )
+    if error == category_service.DELETED_CATEGORY_WITH_NAME:
+        return deleted_category_conflict(category)
     if error:
         return jsonify({'error': error}), 404
 
@@ -66,3 +85,17 @@ def delete_category(category_id):
         return jsonify({'error': error}), 404
 
     return jsonify({'message': 'Kategorie gelöscht'}), 200
+
+
+@category_blueprint.route('/<category_id>/restore', methods=['POST'])
+@jwt_required()
+def restore_category(category_id):
+    user_id = get_jwt_identity()
+    category, error = category_service.restore_category(category_id, user_id)
+
+    if error == category_service.CATEGORY_NOT_FOUND:
+        return jsonify({'error': error}), 404
+    if error:
+        return jsonify({'error': error}), 409
+
+    return jsonify(category_to_dict(category)), 200

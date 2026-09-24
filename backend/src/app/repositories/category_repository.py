@@ -1,8 +1,14 @@
 import uuid
 from datetime import datetime, timezone
+from sqlalchemy import func
 from src.app.repositories.base_repository import BaseRepository
-from src.app.models.categories import Categories
+from src.app.models.categories import Categories, normalized_category_name
 from src.app.db import db
+
+
+def _same_name_as(name: str):
+    # Compare like the unique index does: ignoring case and surrounding whitespace
+    return normalized_category_name(Categories.name) == normalized_category_name(name)
 
 
 class CategoryRepository(BaseRepository):
@@ -14,10 +20,22 @@ class CategoryRepository(BaseRepository):
             user_id=user_id, deleted_at=None
         ).all()
 
-    def name_exists_for_user(self, user_id, name: str) -> bool:
-        return Categories.query.filter_by(
-            user_id=user_id, name=name, deleted_at=None
-        ).first() is not None
+    def name_exists_for_user(self, user_id, name: str, except_category_id=None) -> bool:
+        query = Categories.query.filter(
+            Categories.user_id == user_id,
+            Categories.deleted_at.is_(None),
+            _same_name_as(name),
+        )
+        if except_category_id:
+            query = query.filter(Categories.id != except_category_id)
+        return query.first() is not None
+
+    def find_latest_deleted_by_name(self, user_id, name: str):
+        return Categories.query.filter(
+            Categories.user_id == user_id,
+            Categories.deleted_at.isnot(None),
+            _same_name_as(name),
+        ).order_by(Categories.deleted_at.desc()).first()
 
     def create_category(self, user_id, name: str) -> Categories:
         category = Categories(

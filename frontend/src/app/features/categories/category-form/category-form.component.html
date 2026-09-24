@@ -5,18 +5,31 @@
 
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Name</mat-label>
-      <input matInput formControlName="name">
+      <input #nameInput matInput formControlName="name">
       @if (form.get('name')?.hasError('required')) {
         <mat-error>Name erforderlich</mat-error>
       }
     </mat-form-field>
 
   </form>
+
+  @if (deletedCategory(); as deleted) {
+    <app-deleted-category-choice
+      [deletedCategory]="deleted"
+      [renaming]="isEdit"
+      [busy]="busy()"
+      (restore)="restoreDeletedCategory()"
+      (proceed)="saveDespiteDeletedCategory()"
+      (cancelled)="dismissDeletedCategory()"
+    />
+  }
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-button (click)="cancel()">Abbrechen</button>
-  <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid">
-    {{ isEdit ? 'Speichern' : 'Erstellen' }}
-  </button>
-</mat-dialog-actions>
+@if (!deletedCategory()) {
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="cancel()">Abbrechen</button>
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid || busy()">
+      {{ isEdit ? 'Speichern' : 'Erstellen' }}
+    </button>
+  </mat-dialog-actions>
+}

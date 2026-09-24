@@ -76,12 +76,20 @@
           </button>
         </div>
       }
-      @if (newCategoryOffer() !== 'none') {
+      @if (deletedCategory(); as deleted) {
+        <app-deleted-category-choice
+          [deletedCategory]="deleted"
+          [busy]="newCategoryOffer() === 'creating'"
+          (restore)="restoreDeletedCategory()"
+          (proceed)="createDespiteDeletedCategory()"
+          (cancelled)="dismissDeletedCategory()"
+        />
+      } @else if (newCategoryOffer() !== 'none') {
         <div>
           <p role="status">Keine passende Kategorie gefunden. Neue Kategorie anlegen?</p>
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Neue Kategorie</mat-label>
-            <input matInput [formControl]="newCategoryName">
+            <input #newCategoryNameInput matInput [formControl]="newCategoryName">
             @if (newCategoryName.hasError('required')) {
               <mat-error>Name erforderlich</mat-error>
             }

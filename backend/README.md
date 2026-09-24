@@ -106,9 +106,10 @@ all ids are UUIDs. JSON bodies use camelCase keys; responses do too.
 | Method | Path | Body | Description |
 |---|---|---|---|
 | GET | `/categories` | — | All categories for the authenticated user |
-| POST | `/categories` | `name` | Create a category (a plain label; usable by both income and expense transactions) |
-| PUT | `/categories/<id>` | `name` | Rename a category |
+| POST | `/categories` | `name`, `ignoreDeletedCategory`? | Create a category (a plain label; usable by both income and expense transactions). Names are unique among active categories, ignoring case and surrounding whitespace ("Miete" and "miete" cannot both be active). If a deleted category has the name, answers `409` with `deletedCategory: { id, name, deletedAt }` and creates nothing, unless `ignoreDeletedCategory` is `true` |
+| PUT | `/categories/<id>` | `name`, `ignoreDeletedCategory`? | Rename a category. Same `409` with `deletedCategory` when a deleted category has the new name, unless `ignoreDeletedCategory` is `true` |
 | DELETE | `/categories/<id>` | — | Soft-delete a category |
+| POST | `/categories/<id>/restore` | — | Restore an own deleted category with its ID; transactions, budgets and fixed costs pointing to it are active again. `404` if it is missing, another user's or not deleted; `409` if an active category already has its name |
 
 ### Transactions — `/transactions` *(JWT required)*
 
@@ -265,6 +266,10 @@ pytest tests/test_category_service.py # a single file
 - **Reset**: each test run drops and recreates the schema from the models
   (`db.create_all()`, not Alembic); after every test all tables are truncated,
   so tests never see each other's data.
+- **Migrations**: `tests/test_migrations.py` builds a second database,
+  `<DB_NAME>_migrations_test`, with `alembic upgrade head` and checks that it
+  matches the models, so a migration that leaves the schema behind the models
+  fails a test instead of a fresh install.
 - **Fixtures** (`tests/conftest.py`):
 
   | Fixture | Provides |
