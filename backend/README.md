@@ -9,7 +9,7 @@ Flask REST API with JWT authentication, a 3-layer architecture, and PostgreSQL.
 - **Database**: PostgreSQL
 - **ORM**: SQLAlchemy 2.0
 - **Migrations**: Alembic
-- **AI**: `ai-sdk-python` → any OpenAI-compatible LLM endpoint, LM Studio by default (category suggestions)
+- **AI**: `ai-sdk-python` → any OpenAI-compatible LLM endpoint of your choice, local or external (category suggestions)
 
 ## Architecture
 
@@ -118,7 +118,7 @@ all ids are UUIDs. JSON bodies use camelCase keys; responses do too.
 | GET | `/transactions` | `?month&year&day&include_voided` (all optional) | List transactions, newest first |
 | GET | `/transactions/balance` | `?month&year&day` (optional) | Computed balance — `{ income, expense, initialBalance, balance }`. With `month`/`year`/`day` the balance is calculated up to that date incl. carryover |
 | POST | `/transactions` | `name`, `amount`, `type`, `transactionDate`, `categoryId`*, `description`?, `fixedCostId`? | Create a transaction. `type`: `INCOME` \| `EXPENSE` \| `INITIAL`. `categoryId` required unless `type` is `INITIAL` |
-| POST | `/transactions/category-suggestion` | `name`, `type` (`INCOME` \| `EXPENSE` \| `INITIAL`), `description`? | Category Suggestion from an LLM — `{ categoryId, newCategoryName }`: an existing category's id, a proposed new category name, or both `null` (no suggestion, also when the LLM call fails). Only `name`, `description`, `type` and the user's category names are sent to the configured LLM endpoint (`LLM_BASE_URL`, LM Studio by default). Writes nothing |
+| POST | `/transactions/category-suggestion` | `name`, `type` (`INCOME` \| `EXPENSE` \| `INITIAL`), `description`? | Category Suggestion from an LLM — `{ categoryId, newCategoryName }`: an existing category's id, a proposed new category name, or both `null` (no suggestion, also when the LLM call fails). Only `name`, `description`, `type` and the user's category names are sent to the configured LLM endpoint (`LLM_BASE_URL`). Writes nothing |
 | PUT | `/transactions/<id>` | any of the create fields | Update a transaction |
 | POST | `/transactions/<id>/void` | — | Mark a transaction as voided (it stops counting; not deleted) |
 | DELETE | `/transactions/<id>` | — | Not allowed — always `405`; use void instead |
@@ -194,7 +194,11 @@ Swagger UI is loaded from jsDelivr (pinned version with integrity hashes), so
 
 ## Setup
 
-1. **Create and activate virtual environment**
+**Prerequisites:** Python 3.13 and a running PostgreSQL server with an existing
+database (`DB_NAME`) and a user that may access it. A local model (e.g. via LM Studio) or another
+OpenAI-compatible LLM endpoint is optional and only needed for category suggestions.
+
+1. **Create and activate virtual environment** (from `backend/`)
    ```bash
    python -m venv .venv
    .venv\Scripts\activate     # Windows
@@ -207,20 +211,19 @@ Swagger UI is loaded from jsDelivr (pinned version with integrity hashes), so
    ```
 
 3. **Create `.env` file** in the `backend/` directory by copying
-   [`.env.example`](.env.example) and filling in your values.
+   [`.env.example`](.env.example) and filling in your values:
 
-   The `LLM_*` variables are only needed for category suggestions — without
-   `LLM_BASE_URL` and `LLM_MODEL` the suggestion endpoint simply returns no
-   suggestion. Any OpenAI-compatible endpoint works; the default is a local
-   model via [LM Studio](https://lmstudio.ai/):
-   - Load the model in LM Studio before using the app. The first request after
-     loading can take longer than the timeout and then returns no suggestion.
-   - Start the server in LM Studio's Developer tab (default
-     `http://localhost:1234/v1`) and set `LLM_MODEL` to the model ID it shows.
-   - For models with a thinking mode (e.g. Qwen), turn thinking off in
-     LM Studio — a category needs no reasoning and it only adds latency.
-   - `LLM_API_KEY` is only needed for an external provider.
-     `LLM_TIMEOUT_SECONDS` (default 10) can be raised for a slow local model.
+   | Variable | Required | Meaning |
+   |---|---|---|
+   | `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_NAME` | Yes | PostgreSQL connection |
+   | `JWT_SECRET_KEY` | Yes | Secret for signing access tokens — use a long random string |
+   | `LLM_BASE_URL`, `LLM_MODEL` | For category suggestions | OpenAI-compatible endpoint and model ID |
+   | `LLM_API_KEY` | For external providers | API key of the provider |
+   | `LLM_TIMEOUT_SECONDS` | No | Timeout per suggestion request, default `10` |
+   | `TEST_DB_NAME` | No | Test database name, see [Automated Tests](#automated-tests) |
+
+   For the `LLM_*` variables, choose a provider as described in
+   [Category Suggestions: Choosing an LLM](#category-suggestions-choosing-an-llm).
 
 4. **Run migrations**
    ```bash
@@ -233,6 +236,82 @@ Swagger UI is loaded from jsDelivr (pinned version with integrity hashes), so
    ```
 
 API available at `http://localhost:5000`.
+
+## Category Suggestions: Choosing an LLM
+
+`POST /transactions/category-suggestion` asks an LLM for a category. The repo
+does not preset a provider: any endpoint that speaks the OpenAI chat completions
+API works, and you choose it in `.env`. Without `LLM_BASE_URL` and `LLM_MODEL`
+the endpoint returns no suggestion and nothing is sent anywhere; the rest of the
+app is unaffected. The same happens if the LLM call fails or times out.
+
+Only the transaction's `name`, `description`, `type` and the user's category
+names are sent to the endpoint. With an external provider, this data leaves
+your machine.
+
+The suggested models below are starting points for a small, fast model — the
+task is a short classification and needs no reasoning. They have not been
+systematically benchmarked yet.
+
+### Option A: Local model via LM Studio
+
+No API key, no rate limits, and transaction text stays on your machine. Needs
+enough RAM for a small model (a 4B model runs on a laptop CPU with 16 GB RAM).
+
+1. Install [LM Studio](https://lmstudio.ai/) and download a model, e.g.
+   **Gemma 4 E4B** (QAT) or **Qwen 3.5 4B**.
+2. Load the model and start the server in LM Studio's Developer tab
+   (default `http://localhost:1234/v1`).
+3. For models with a thinking mode (e.g. Qwen), turn thinking off in
+   LM Studio — it only adds latency.
+4. In `.env`:
+   ```env
+   LLM_BASE_URL=http://localhost:1234/v1
+   # the model ID LM Studio shows (also listed at GET /v1/models)
+   LLM_MODEL=gemma-4-e4b-it-qat
+   # optional: a CPU-only model may need more than the default 10 s
+   LLM_TIMEOUT_SECONDS=20
+   ```
+
+The model must be loaded while you use the app. The first request after loading
+can take longer than the timeout and then returns no suggestion.
+
+### Option B: OpenAI
+
+Reliable and fast without local hardware. Paid per request, but a suggestion
+uses only a few hundred tokens.
+
+1. Create an API key at [platform.openai.com](https://platform.openai.com/api-keys).
+2. In `.env`:
+   ```env
+   LLM_BASE_URL=https://api.openai.com/v1
+   LLM_MODEL=gpt-4.1-mini
+   LLM_API_KEY=your_openai_api_key
+   ```
+
+Prefer a small model without reasoning (such as `gpt-4.1-mini`); reasoning
+models are slower and can run into the timeout.
+
+### Option C: Z.AI
+
+Offers `glm-4.7-flash` in a free tier, which is handy for trying the feature
+out. In our tests the free tier answered most requests with `429` (rate limit
+or overloaded), so suggestions often did not appear. For regular use, a paid
+Z.AI plan or another option is more reliable.
+
+1. Create an API key at [z.ai](https://z.ai/).
+2. In `.env`:
+   ```env
+   LLM_BASE_URL=https://api.z.ai/api/paas/v4/
+   LLM_MODEL=glm-4.7-flash
+   LLM_API_KEY=your_z_ai_api_key
+   ```
+
+### Other providers
+
+Any other OpenAI-compatible endpoint works the same way: set its base URL,
+model ID and API key. The model must be able to answer with JSON matching a
+given schema.
 
 ## Database Migrations
 
