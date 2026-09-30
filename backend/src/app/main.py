@@ -27,6 +27,10 @@ DB_NAME = os.getenv("DB_NAME")
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev_fallback_secret")
 
+# Comma-separated list of frontend origins allowed to call the API, e.g. the Vercel URL.
+CORS_ORIGINS = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "http://localhost:4200").split(",")
+                if origin.strip()]
+
 def build_database_uri(db_name):
     return (f"postgresql://{DB_USER}:{DB_PASSWORD}"
             f"@{DB_HOST}:{DB_PORT}/{db_name}")
@@ -43,7 +47,7 @@ def create_app(config_overrides=None):
     db.init_app(app)
     JWTManager(app)
     bcrypt.init_app(app)
-    CORS(app, origins=["http://localhost:4200"])
+    CORS(app, origins=CORS_ORIGINS)
 
     app.register_blueprint(user_blueprint)
     app.register_blueprint(auth_blueprint)
