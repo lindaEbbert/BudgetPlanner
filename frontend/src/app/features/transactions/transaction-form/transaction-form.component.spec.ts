@@ -153,6 +153,16 @@ async function getSuggestedCategoryOffer(fixture: ComponentFixture<TransactionFo
   };
 }
 
+function expectSavedDate(httpMock: HttpTestingController, method: string, path: string, date: string) {
+  const request = httpMock.expectOne((req) => req.method === method && req.url.endsWith(path));
+  expect(request.request.body.transactionDate).toBe(date);
+}
+
+async function clickSaveButton(fixture: ComponentFixture<TransactionFormComponent>, text: string) {
+  const loader = TestbedHarnessEnvironment.loader(fixture);
+  await (await loader.getHarness(MatButtonHarness.with({ text }))).click();
+}
+
 describe('TransactionFormComponent – fixed-cost assignment', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
@@ -925,5 +935,37 @@ describe('TransactionFormComponent – category suggestion on request', () => {
 
       expect(await (await getSuggestButton(fixture)).isDisabled()).toBe(true);
     });
+  });
+});
+
+describe('TransactionFormComponent – transaction date', () => {
+  afterEach(() => {
+    TestBed.inject(HttpTestingController).verify();
+    vi.unstubAllEnvs();
+  });
+
+  it('saves the day picked in the date picker east of UTC', async () => {
+    vi.stubEnv('TZ', 'Europe/Berlin');
+    const { fixture, component, httpMock } = setup();
+    // The category comes first, so choosing the type asks for no suggestion.
+    component.form.patchValue({ categoryId: 'cat-leisure', name: 'Kino', amount: 12, type: 'EXPENSE' });
+    // The date picker hands over the picked day at local midnight.
+    component.form.controls.transactionDate.setValue(new Date(2026, 8, 30));
+
+    await clickSaveButton(fixture, 'Erstellen');
+
+    expectSavedDate(httpMock, 'POST', '/transactions', '2026-09-30');
+  });
+
+  it('shows and saves the stored day of an edited transaction west of UTC', async () => {
+    vi.stubEnv('TZ', 'America/New_York');
+    const { fixture, component, httpMock } = setup(rentTransaction);
+
+    const shown = component.form.controls.transactionDate.value as Date;
+    expect([shown.getFullYear(), shown.getMonth(), shown.getDate()]).toEqual([2026, 2, 1]);
+
+    await clickSaveButton(fixture, 'Speichern');
+
+    expectSavedDate(httpMock, 'PUT', `/transactions/${rentTransaction.id}`, '2026-03-01');
   });
 });

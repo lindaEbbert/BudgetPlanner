@@ -22,6 +22,7 @@ import { DeletedCategoryChoiceComponent } from '../../categories/deleted-categor
 import { FixedCostService} from '../../fixed-costs/fixed-cost.service';
 import { CategorySuggestionService } from '../category-suggestion.service';
 import { FixedCost } from '../../../shared/models';
+import { fromIsoDate, toIsoDate } from '../../../shared/utils/iso-date';
 import {
   Transaction,
   Category,
@@ -79,7 +80,7 @@ export class TransactionFormComponent {
     type: [this.data?.type ?? '', Validators.required],
     categoryId: [this.data?.categoryId ?? ''],
     transactionDate: [
-      this.data?.transactionDate ? new Date(this.data.transactionDate) : new Date(),
+      this.data?.transactionDate ? fromIsoDate(this.data.transactionDate) : new Date(),
       Validators.required,
     ],
     fixedCostId: [this.data?.fixedCostId ?? ''],
@@ -127,7 +128,7 @@ export class TransactionFormComponent {
       name: raw.name!,
       amount: Number(raw.amount),
       type: raw.type as TransactionType,
-      transactionDate: (raw.transactionDate as Date).toISOString().split('T')[0],
+      transactionDate: toIsoDate(raw.transactionDate as Date),
       categoryId: raw.categoryId || undefined,
       fixedCostId: raw.fixedCostId || undefined,
       description: raw.description || undefined,

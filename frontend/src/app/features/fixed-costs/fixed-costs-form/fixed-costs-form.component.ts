@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { FixedCostService } from '../fixed-cost.service';
+import { toIsoDate } from '../../../shared/utils/iso-date';
 
 @Component({
   selector: 'app-fixed-cost-form',
@@ -54,7 +55,7 @@ export class FixedCostFormComponent {
       amount: value.amount!,
       intervalUnit: value.intervalUnit as 'MONTH' | 'YEAR',
       intervalValue: value.intervalValue!,
-      startDate: value.startDate!.toISOString().split('T')[0],
+      startDate: toIsoDate(value.startDate!),
       description: value.description || undefined,
     }).subscribe({
       next: () => this.dialogRef.close(true),
