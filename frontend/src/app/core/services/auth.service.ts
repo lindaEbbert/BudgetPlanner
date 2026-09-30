@@ -14,6 +14,17 @@ export interface LoginDto {
   password: string;
 }
 
+interface RegisterResponse {
+  message: string;
+  id: string;
+}
+
+export interface RegisterDto {
+  name: string;
+  email: string;
+  password: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'access_token';
@@ -28,6 +39,10 @@ export class AuthService {
     return this.http
       .post<LoginResponse>(`${this.baseUrl}/auth/login`, credentials)
       .pipe(tap((response) => localStorage.setItem(this.TOKEN_KEY, response.access_token)));
+  }
+
+  register(account: RegisterDto): Observable<RegisterResponse> {
+    return this.http.post<RegisterResponse>(`${this.baseUrl}/auth/register`, account);
   }
 
   logout(): void {
