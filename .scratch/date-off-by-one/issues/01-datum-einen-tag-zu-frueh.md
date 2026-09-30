@@ -1,6 +1,6 @@
 # 01: Transaktionen und Fixkosten werden einen Tag zu früh angelegt
 
-**Status:** ready-for-agent
+**Status:** done
 
 **Category:** bug
 
@@ -60,17 +60,17 @@ gebildet, nie über UTC.
   `new Date("YYYY-MM-DD")`.
 
 **Acceptance criteria:**
-- [ ] Ein im Transaktionsformular gewählter 30.09.2026 wird als
+- [x] Ein im Transaktionsformular gewählter 30.09.2026 wird als
       `"2026-09-30"` gesendet (Anlegen und Bearbeiten)
-- [ ] Das vorbelegte „heute“ wird auch kurz nach Mitternacht Ortszeit als
+- [x] Das vorbelegte „heute“ wird auch kurz nach Mitternacht Ortszeit als
       heutiges Datum gesendet
-- [ ] Beim Bearbeiten einer Transaktion mit `transactionDate: "2026-09-30"`
+- [x] Beim Bearbeiten einer Transaktion mit `transactionDate: "2026-09-30"`
       zeigt der Picker den 30.09.2026, auch in einer Zeitzone westlich von UTC
-- [ ] Ein im Fixkostenformular gewählter Starttermin wird unverändert als
+- [x] Ein im Fixkostenformular gewählter Starttermin wird unverändert als
       `YYYY-MM-DD` gesendet
-- [ ] Im Frontend-Code gibt es kein `toISOString().split('T')[0]` mehr, um
+- [x] Im Frontend-Code gibt es kein `toISOString().split('T')[0]` mehr, um
       ein Datum ohne Uhrzeit zu bilden
-- [ ] Tests für die Hilfsfunktion decken eine Zeitzone östlich von UTC
+- [x] Tests für die Hilfsfunktion decken eine Zeitzone östlich von UTC
       (z. B. `Europe/Berlin`) und eine westlich von UTC ab, jeweils für
       lokale Mitternacht und eine Uhrzeit kurz nach Mitternacht; `ng test`
       läuft grün
