@@ -1,0 +1,73 @@
+<div class="register-container">
+  <mat-card>
+
+    <mat-card-header>
+      <mat-card-title>BudgetPlanner</mat-card-title>
+      <mat-card-subtitle>Registrieren</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Name</mat-label>
+          <input matInput formControlName="name" autocomplete="name">
+          @if (registerForm.controls.name.hasError('required')) {
+            <mat-error>Name erforderlich</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>E-Mail</mat-label>
+          <input matInput formControlName="email" type="email" autocomplete="email">
+          @if (registerForm.controls.email.hasError('required')) {
+            <mat-error>E-Mail erforderlich</mat-error>
+          }
+          @if (registerForm.controls.email.hasError('email')) {
+            <mat-error>Ungültige E-Mail-Adresse</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Passwort</mat-label>
+          <input matInput formControlName="password" type="password" autocomplete="new-password">
+          @if (registerForm.controls.password.hasError('required')) {
+            <mat-error>Passwort erforderlich</mat-error>
+          }
+          @if (registerForm.controls.password.hasError('minlength')) {
+            <mat-error>Mindestens 6 Zeichen</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Passwort wiederholen</mat-label>
+          <input matInput formControlName="passwordRepeat" type="password" autocomplete="new-password">
+          @if (registerForm.controls.passwordRepeat.hasError('required')) {
+            <mat-error>Passwort wiederholen erforderlich</mat-error>
+          } @else if (registerForm.controls.passwordRepeat.hasError('passwordMismatch')) {
+            <mat-error>Passwörter stimmen nicht überein</mat-error>
+          }
+        </mat-form-field>
+
+        @if (errorMessage()) {
+          <p class="error-msg" role="alert">{{ errorMessage() }}</p>
+        }
+
+        <button mat-raised-button color="primary" type="submit"
+                class="full-width" [disabled]="registerForm.invalid || isLoading()">
+          @if (isLoading()) {
+            <mat-spinner diameter="20" aria-label="Registrierung läuft" />
+          } @else {
+            <span>Registrieren</span>
+          }
+        </button>
+
+      </form>
+
+      <p class="switch-link">
+        Schon ein Konto? <a routerLink="/login">Anmelden</a>
+      </p>
+    </mat-card-content>
+
+  </mat-card>
+</div>
