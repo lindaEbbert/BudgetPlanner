@@ -14,52 +14,52 @@ vorgewarnt und muss das Umbenennen bestätigen.
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** done
 
 ### Backend
 
-- [ ] Die Eindeutigkeit des Category-Namens pro Nutzer gilt nur für nicht
+- [x] Die Eindeutigkeit des Category-Namens pro Nutzer gilt nur für nicht
       gelöschte Categories (Alembic-Migration und Model; die Tests bauen das
       Schema aus den Models)
-- [ ] Anlegen und Umbenennen auf den Namen einer gelöschten Category liefern
+- [x] Anlegen und Umbenennen auf den Namen einer gelöschten Category liefern
       keinen 500er mehr
-- [ ] Anlegen mit dem Namen einer gelöschten Category legt ohne ausdrückliche
+- [x] Anlegen mit dem Namen einer gelöschten Category legt ohne ausdrückliche
       Wahl "neu anlegen" nichts an und meldet die gelöschte Category (ID,
       Name, Löschdatum), damit das Frontend nachfragen kann
-- [ ] Mit ausdrücklicher Wahl "neu anlegen" entsteht eine neue Category mit
+- [x] Mit ausdrücklicher Wahl "neu anlegen" entsteht eine neue Category mit
       neuer ID; die gelöschte bleibt gelöscht
-- [ ] Umbenennen auf den Namen einer gelöschten Category ändert ohne
+- [x] Umbenennen auf den Namen einer gelöschten Category ändert ohne
       ausdrückliche Bestätigung nichts und meldet die gelöschte Category;
       mit Bestätigung wird umbenannt, die gelöschte bleibt gelöscht
-- [ ] Ein neuer JWT-geschützter Endpoint stellt eine eigene gelöschte
+- [x] Ein neuer JWT-geschützter Endpoint stellt eine eigene gelöschte
       Category wieder her und gibt sie zurück. Fremde, nicht existierende
       oder nicht gelöschte Categories → 404; gibt es bereits eine aktive
       Category mit diesem Namen → 409
-- [ ] Der Namensabgleich ignoriert Groß-/Kleinschreibung und umgebende
+- [x] Der Namensabgleich ignoriert Groß-/Kleinschreibung und umgebende
       Leerzeichen (wie der Category-Suggestion-Service); bei mehreren
       gelöschten Treffern wird die zuletzt gelöschte angeboten
-- [ ] `backend/README.md`, OpenAPI-Spec und `test.http` sind aktualisiert
+- [x] `backend/README.md`, OpenAPI-Spec und `test.http` sind aktualisiert
 
 ### Frontend
 
-- [ ] Kategorien-Übersicht (`CategoryFormComponent`): Meldet das Backend
+- [x] Kategorien-Übersicht (`CategoryFormComponent`): Meldet das Backend
       eine gelöschte Category mit dem Namen, erscheint die Auswahl "Alte
       Kategorie wiederherstellen" / "Neue Kategorie anlegen" / "Abbrechen".
       Abbrechen legt nichts an und lässt den Dialog mit dem eingegebenen
       Namen offen
-- [ ] Kategorien-Übersicht, Umbenennen (`CategoryFormComponent` im
+- [x] Kategorien-Übersicht, Umbenennen (`CategoryFormComponent` im
       Bearbeiten-Modus): Meldet das Backend eine gelöschte Category mit dem
       neuen Namen, erscheint die Warnung, dass es diese Kategorie schon
       einmal gab, mit der Auswahl "Wirklich umbenennen" / "Abbrechen".
       Abbrechen ändert nichts und lässt den Dialog mit dem eingegebenen
       Namen offen; ein Wiederherstellen wird hier nicht angeboten
-- [ ] Transaktionsformular: Dieselbe Auswahl erscheint, wenn der Nutzer
+- [x] Transaktionsformular: Dieselbe Auswahl erscheint, wenn der Nutzer
       einen vorgeschlagenen neuen Kategorienamen bestätigt (Ticket 04, später
       auch 05). Wiederherstellen bzw. neu anlegen setzt die jeweilige
       Category als Auswahl; Abbrechen legt nichts an, lässt das Category-Feld
       unverändert und kehrt zum Vorschlags-Hinweis mit editierbarem Namen
       zurück
-- [ ] Tests: Backend über Service und Flask-Test-Client; Frontend über
+- [x] Tests: Backend über Service und Flask-Test-Client; Frontend über
       TestBed mit `HttpTestingController` für beide Stellen
 
 ## Comments
@@ -95,3 +95,28 @@ vorgewarnt und muss das Umbenennen bestätigen.
   - Von Ticket 07 ist noch nichts umgesetzt (kein Restore-Endpoint, kein
     `deletedCategory`, kein `ignoreDeletedCategory`).
   - Blocker Ticket 04 ist `done`; Status bleibt `ready-for-agent`.
+
+- 2026-09-24: Umgesetzt in `8556cbb`. Backend 47 Tests, Frontend 74 Tests
+  grün; `alembic upgrade head` auf Wegwerf-Datenbanken hin und zurück
+  geprüft. Linda hat die Entwicklungs-DB migriert (beide Migrationen
+  durchgelaufen) und das Wiederherstellen live getestet: funktioniert wie
+  erwartet.
+  - API wie oben vorgeschlagen: `409` mit `deletedCategory`,
+    `ignoreDeletedCategory` (nur ein echtes `true` zählt) und
+    `POST /categories/<id>/restore`.
+  - Entscheidung aus dem Review: Auch aktive Namen sind jetzt ohne Rücksicht
+    auf Groß-/Kleinschreibung und umgebende Leerzeichen eindeutig; „Miete“
+    und „miete“ können nicht gleichzeitig aktiv sein. Der Unique-Index läuft
+    auf `lower(trim(name))`. Anders als der Category-Suggestion-Service
+    (`casefold()`) behandelt Postgres `lower()` „ß“ und „ss“ als verschieden.
+  - Die Auswahl steckt in `DeletedCategoryChoiceComponent` und wird von
+    `CategoryFormComponent` und dem Transaktionsformular genutzt. Im
+    Transaktionsformular hängt sie am Hinweis für eine neue Category, gilt
+    also für den automatischen Vorschlag (04) und den Button (05). Ticket 13
+    fasst denselben Hinweis an.
+  - Im Scope mit erledigt: Die Migration `9b09cd6e63e5` sollte
+    `categories.category_type` entfernen, tat es aber nicht; auf einer frisch
+    migrierten DB ließ sich darum keine Category anlegen. Die neue Migration
+    `4e8b2f61d0a7` entfernt Spalte und Enum-Typ, und
+    `tests/test_migrations.py` vergleicht künftig eine frisch migrierte DB
+    mit den Models.
